@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -5,6 +6,10 @@ import os
 
 class Unpack:
     def __init__(self, directory):
+        """
+        Initialize Unpack object
+        :param directory: string path to the data directory
+        """
         self.intervals = []
         self.data = []
         self.file_names = []
@@ -17,20 +22,23 @@ class Unpack:
         self.generate_intervals()
 
     def generate_intervals(self):
-        mod_sum = 2147483648 + 2147483647
+        """
+        Don't use this function, it is used in __init__ already
+        """
         for array in self.data:
             last = array[0]
             current_intervals = []
             for time_stamp in array[1:]:
                 with np.errstate(over='ignore'):
                     current = time_stamp - last
-                if current < 0:
-                    current += mod_sum
                 current_intervals.append(current)
                 last = time_stamp
             self.intervals.append(np.array(current_intervals))
 
     def plot_data(self):
+        """
+        Plots all the data as TimeStamp vs EventNumber
+        """
         for i in range(len(self.data)):
             plt.plot(range(self.data[i].size), self.data[i])
         plt.xlabel("Event")
@@ -39,6 +47,35 @@ class Unpack:
         plt.legend([x[5] for x in self.file_names], loc='upper right')
         plt.show()
 
+    def plot_intervals(self, trial):
+        """
+        Plots intervals for a single trial
+        :param trial: number (0-9) of trial whose histogram should be plotted
+        """
+        plt.plot(self.intervals[trial], ',')
+        plt.xlabel("Event")
+        plt.ylabel("$dt$")
+        plt.title("All Intervals")
+        plt.show()
+
+    def plot_all_intervals(self):
+        """
+        Plots all intervals
+        """
+        for i in range(len(self.data)):
+            plt.plot(self.intervals[i], ',')
+        plt.xlabel("Event")
+        plt.ylabel("$dt$")
+        plt.title("All Intervals")
+        plt.show()
+
     def plot_histogram(self, trial):
+        """
+        Plots a histogram of a single trial
+        :param trial: number (0-9) of trial whose histogram should be plotted
+        """
         plt.hist(self.intervals[trial])
+        plt.xlabel("$dt$ bin")
+        plt.ylabel("Abundance")
+        plt.title("Trial: " + self.file_names[trial])
         plt.show()
