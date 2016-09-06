@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -35,27 +34,39 @@ class Unpack:
                 last = time_stamp
             self.intervals.append(np.array(current_intervals))
 
-    def plot_data(self):
+    def plot_data(self, trial):
         """
+        Plots data from one trial as TimeStamp vs EventNumber
+        :param trial: number (0-9) of trial that should be plotted
+        """
+        plt.plot(self.data[trial])
+        plt.xlabel("Event Number")
+        plt.ylabel("Time Stamp (clock ticks)")
+        plt.title("Data from: "+self.file_names[trial])
+        plt.show()
+
+    def plot_all_data(self):
+        """"
         Plots all the data as TimeStamp vs EventNumber
         """
         for i in range(len(self.data)):
             plt.plot(range(self.data[i].size), self.data[i])
-        plt.xlabel("Event")
-        plt.ylabel("Time Stamp")
+        plt.xlabel("Event Number")
+        plt.ylabel("Time Stamp (clock ticks)")
         plt.title("All 8 trials of photon count")
         plt.legend([x[5] for x in self.file_names], loc='upper right')
         plt.show()
 
+
     def plot_intervals(self, trial):
         """
         Plots intervals for a single trial
-        :param trial: number (0-9) of trial whose histogram should be plotted
+        :param trial: number (0-9) of trial whose intervals should be plotted
         """
         plt.plot(self.intervals[trial], ',')
-        plt.xlabel("Event")
-        plt.ylabel("$dt$")
-        plt.title("All Intervals")
+        plt.xlabel("Event Number")
+        plt.ylabel("$dt$ (clock ticks)")
+        plt.title("Intervals from: "+self.file_names[trial])
         plt.show()
 
     def plot_all_intervals(self):
@@ -64,8 +75,8 @@ class Unpack:
         """
         for i in range(len(self.data)):
             plt.plot(self.intervals[i], ',')
-        plt.xlabel("Event")
-        plt.ylabel("$dt$")
+        plt.xlabel("Event Number")
+        plt.ylabel("$dt$ (clock ticks)")
         plt.title("All Intervals")
         plt.show()
 

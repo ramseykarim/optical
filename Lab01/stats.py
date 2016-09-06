@@ -2,10 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def show():
-    plt.show()
-
-
 class Stats:
     def __init__(self, unpacked):
         self.data = unpacked
@@ -21,7 +17,6 @@ class Stats:
         for j in i[0::chunk_size]:
             means.append(np.mean(dt[j:j + chunk_size]))
             bins.append((j + j + chunk_size - 1)/2)
-            print j, j + chunk_size - 1, means[len(means) - 1]
         return means, bins
 
     def mean_progressive(self, trial, chunk_size):
@@ -37,13 +32,45 @@ class Stats:
     def plot_mean_chunks(self, trial, chunk_size):
         means, bins = self.mean_chunks(trial, chunk_size)
         plt.plot(bins, means, 'o', color='#005555')
-        plt.xlabel("Bin")
-        plt.ylabel("Mean")
-        plt.title("Bin Averages with steps of " + str(chunk_size))
+        plt.xlabel("Bin Midpoint")
+        plt.ylabel("Mean Interval (clock ticks)")
+        plt.title("Bin Averages with steps of " + str(chunk_size)
+                  + " from " + self.data.file_names[trial])
+        plt.show()
 
     def plot_mean_progressive(self, trial, chunk_size):
         means, bins = self.mean_progressive(trial, chunk_size)
         plt.plot(bins, means, 'o', color='#009999')
         plt.xlabel("Number of Intervals Averaged")
-        plt.ylabel("Mean")
-        plt.title("Average across progressively larger sample sizes")
+        plt.ylabel("Mean Interval (clock ticks)")
+        plt.title("Average across progressively larger sample sizes from "
+                  + self.data.file_names[trial])
+        plt.show()
+
+    def sdom(self, trial):
+        sdoms = []
+        chunks = np.arange(5, 400, 5)
+        for chunk_size in chunks:
+            means, bins = self.mean_chunks(trial, chunk_size)
+            mu = self.mean(trial)
+            means = np.array(means)
+            sd_mean = np.sqrt(np.sum((means - mu)**2.)/(np.float(means.size) - 1))
+            sdoms.append(sd_mean)
+        return sdoms, chunks
+
+    def plot_sdom_by_size(self, trial):
+        sdoms, chunks = self.sdom(trial)
+        plt.plot(chunks, sdoms, 'o', color='#009999')
+        plt.xlabel("Number of events averaged")
+        plt.ylabel("Standard deviation of the mean (ticks)")
+        plt.title("SDOM versus size of averaged sample")
+        plt.show()
+
+    def plot_sdom_by_rootn(self, trial):
+        sdoms, chunks = self.sdom(trial)
+        plt.plot((1/np.sqrt(chunks)), sdoms, 'o', color='#000099')
+        plt.plot((1/np.sqrt(chunks)), 8E6*(1/np.sqrt(chunks)))
+        plt.xlabel("$1/\sqrt{N}$")
+        plt.ylabel("Standard deviation of the mean (ticks)")
+        plt.title("SDOM versus $1/\sqrt{sample \, size}$")
+        plt.show()
