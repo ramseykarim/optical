@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\newcommand{\quickfig}[2]{
+	\begin{figure}[th]
+		\centering
+		\includegraphics[width=0.8\textwidth]{InterimPics/figure_#1.pdf}
+		\caption{\label{fig:f#1}#2}
+	\end{figure}
+}
+
+\title{Astronomy 120 Optical Lab \\ Lab 1 Interim Report}
+\author{Ramsey Karim {\small \sl with} Orders of Raditude Research Group}
+
+\begin{document}
+
+\maketitle
+\abstract{
+	These are the first 8 plots pertaining to Lab 1.
+	They involve some basic plotting and statistics using the
+	photon count data from the CoinPro software.
+	Each plot uses an arbitrary set of data, but all use
+	total $N = 10^4$.
+	The ``OFF'' and ``MAX'' runs were never used for this report.
+}
+
+
+\section{All Figures (1 - 8)}
+\quickfig{1}{Time series of clock tick by event number. Note the cyclical nature of the time stamps
+	 -- this is due to the time stamp data type (int 32), which has upper and lower limits and
+	 deals with overflow using modular arithmetic based on those limits.}
+\quickfig{2}{Time series of interval by event number. Random variation is apparent but difficult
+	to see due to the linestyle of the plot.}
+\quickfig{3}{Time series of interval by event number -- same as Figure \ref{fig:f2}, but with the lines suppressed,
+	making the nature of the variation (and clustering around $dt = 0$ more apparent.)}
+\quickfig{4}{The mean interval from Figure \ref{fig:f3}, calculated in chunks of 1000 elements. Note the variation, but the
+	general clustering around a range of values (the $y$ axis range).}
+\quickfig{5}{The mean interval from Figure \ref{fig:f3}, calculated in progressively larger chunks all starting
+	from the first element. Note the convergence to the mean of the entire set, indicated by the final value.}
+\quickfig{6}{The mean interval from Figure \ref{fig:f3}, calculated in chunks of 100 elements. This is the same as
+	Figure \ref{fig:f4} but with smaller subsets of data. Standard deviation of the mean increases when subset
+	size decreases, as one can see from the increase in variation here compared to Figure \ref{fig:f4}.}
+\quickfig{7}{Standard deviation of the mean (SDOM) plotted against the subset size used to calculate the SDOM.
+	Note the clear correlation between large subset size and small SDOM.}
+\quickfig{8}{SDOM versus $1/\sqrt{N}$. Note that the data points heavily suggest a linear correlation to this value.
+	They very well match the theoretical curve of SDOM $= \frac{\sigma}{\sqrt{N}}$ (the plotted line), where $\sigma$ is the standard
+	deviation of the entire set (ideally $\lim_{N \to \infty}$, but $N = 10^4$ here, since $10^4 \gg$ the subset sizes
+	used for the plotted points).}
+
+
+\end{document}
