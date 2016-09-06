@@ -68,9 +68,11 @@ class Stats:
 
     def plot_sdom_by_rootn(self, trial):
         sdoms, chunks = self.sdom(trial)
+        std = np.std(self.data.intervals[trial])
         plt.plot((1/np.sqrt(chunks)), sdoms, 'o', color='#000099')
-        plt.plot((1/np.sqrt(chunks)), 8E6*(1/np.sqrt(chunks)))
+        plt.plot((1/np.sqrt(chunks)), std*(1/np.sqrt(chunks)))
         plt.xlabel("$1/\sqrt{N}$")
         plt.ylabel("Standard deviation of the mean (ticks)")
-        plt.title("SDOM versus $1/\sqrt{sample \, size}$")
+        plt.title("SDOM versus $1/\sqrt{sample \, size}$ "
+                  + self.data.file_names[trial])
         plt.show()
