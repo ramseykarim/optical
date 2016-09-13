@@ -57,7 +57,6 @@ class Unpack:
         plt.legend([x[5] for x in self.file_names], loc='upper right')
         plt.show()
 
-
     def plot_intervals(self, trial):
         """
         Plots intervals for a single trial
