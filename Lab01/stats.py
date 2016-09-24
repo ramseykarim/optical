@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import histogram as hist
 import binned as bn
+import scipy.special as scifn
 
 
 class Stats:
@@ -49,7 +50,7 @@ class Stats:
             means = np.array(means)
             sd_mean = np.sqrt(np.sum((means - mu) ** 2.) / (np.float(means.size) - 1))
             sdoms.append(sd_mean)
-        return sdoms, chunks
+        return sdoms[:len(sdoms) - 1], chunks[:chunks.size - 1]
 
     def histo(self, trial, n, gated=True, zoom_peak=False):
         def peak_test(b):
@@ -79,9 +80,9 @@ class Stats:
     Plot procedures start here:
     """
 
-    def plot_mean_chunks(self, trial, chunk_size):
+    def plot_mean_chunks(self, trial, chunk_size, sym):
         means, bins = self.mean_chunks(trial, chunk_size)
-        plt.plot(bins, means, 'o', color='#005555')
+        plt.plot(bins, means, sym, color='#005555')
         plt.xlabel("Bin Midpoint")
         plt.ylabel("Mean Interval (clock ticks)")
         plt.title("Bin Averages with steps of " + str(chunk_size)
@@ -99,7 +100,7 @@ class Stats:
 
     def plot_sdom_by_size(self, trial):
         sdoms, chunks = self.sdom(trial)
-        plt.plot(chunks, sdoms, 'o', color='#009999')
+        plt.plot(chunks, sdoms, 'o', color='k')
         plt.xlabel("Number of events averaged")
         plt.ylabel("Standard deviation of the mean (ticks)")
         plt.title("SDOM versus size of averaged sample")
@@ -118,26 +119,25 @@ class Stats:
 
     def plot_histo(self, trial, n, gated=True, zoom_peak=False, log=True):
         h = self.histo(trial, n, gated=gated, zoom_peak=zoom_peak)
-        plt.plot(h.bin_centers, h.bin_counts, drawstyle='steps-mid', color='blue')
-        if not zoom_peak:
-            mean = self.mean(trial)
-            plt.plot(h.bin_centers, ((h.bw * h.dt.size / mean) * np.exp(-1. * h.bin_centers / mean)), color='green')
-            std = self.std(trial)
-            plt.plot(h.bin_centers, ((h.bw * h.dt.size / std) * np.exp(-1. * h.bin_centers / std)), color='red')
-        plt.legend(['Data', 'exp(mean)', 'exp(std)'], loc='upper right')
+        plt.plot(h.bin_centers, h.bin_counts, drawstyle='steps-mid', color='k')
+        if (not zoom_peak) and gated:
+            mean = np.mean(h.dtp)
+            plt.plot(h.bin_centers, ((h.bw * float(len(h.dtp)) / mean) * np.exp(-1. * h.bin_centers / mean)), '--', color='k')
+        plt.legend(['Histogram from Data', 'Theoretical Poisson'], loc='upper right')
         plt.xlabel("Interval Bin (ticks)")
         plt.ylabel("Frequency")
-        plt.title("Histogram for " + self.data.file_names[trial])
+       # plt.title("Histogram for " + self.data.file_names[trial])
         if log:
             plt.yscale('log')
         plt.show()
 
     def plot_std_means(self):
         means, stds = self.compare_brightnesses()
-        plt.plot(means, stds, 'o')
-        plt.plot(means, means)
+        plt.plot(means, stds, 'o', color='k')
+        plt.plot(means, means, '-', color='k')
         plt.xlabel("Interval sample mean (ticks)")
         plt.ylabel("Interval standard deviation (ticks)")
+        plt.legend(['Data', 'Theory'])
         plt.title("STD vs Mean for all runs")
         plt.show()
 
@@ -151,7 +151,7 @@ class Stats:
 
     def plot_binned_events2(self, trial):
         b = bn.Binned(self, trial)
-        plt.plot(b.bin_centers, b.bin_count)
+        plt.plot(b.bin_centers, b.bin_count, color='k')
         plt.xlabel("Time Bin")
         plt.ylabel("Events per Bin")
         plt.title("Number of events in evenly spaced time bins")
@@ -160,8 +160,16 @@ class Stats:
     def plot_bin_of_bins(self, trial):
         b = bn.Binned(self, trial)
         h = hist.Histogram(b.bin_count, b.bin_count.max(), lambda x: False)
-        plt.plot(h.bin_centers, h.bin_counts, drawstyle='steps-mid')
+        plt.plot(h.bin_centers, h.bin_counts, drawstyle='steps-mid', color='k')
+        mean = np.mean(h.dt)
+        x_range = np.arange(h.bin_centers.min(), h.bin_centers.max(), 0.1)
+
+        def poisson(xx):
+            return np.exp(-1. * mean) * np.power(mean, xx) / scifn.gamma(xx + 1)
+
+        plt.plot(x_range, (h.bw * h.dt.size * np.array([poisson(x) for x in x_range])), '--', color='k')
         plt.xlabel("Counts per Bin")
         plt.ylabel("Frequency")
+        plt.legend(['Data', 'Poisson Model'])
         plt.title("Histogram of events per time bin")
         plt.show()

@@ -1,3 +1,8 @@
 # Ignoring the lab guide
 
 Lab1-2016.pdf
+Lab2-2016.pdf
+*.txt
+*.aux
+*.log
+*.pyc

@@ -39,7 +39,7 @@ class Unpack:
         Plots data from one trial as TimeStamp vs EventNumber
         :param trial: number (0-9) of trial that should be plotted
         """
-        plt.plot(self.data[trial])
+        plt.plot(self.data[trial], color='k')
         plt.xlabel("Event Number")
         plt.ylabel("Time Stamp (clock ticks)")
         plt.title("Data from: "+self.file_names[trial])
@@ -62,7 +62,7 @@ class Unpack:
         Plots intervals for a single trial
         :param trial: number (0-9) of trial whose intervals should be plotted
         """
-        plt.plot(self.intervals[trial], ',')
+        plt.plot(self.intervals[trial], '.', color='k')
         plt.xlabel("Event Number")
         plt.ylabel("$dt$ (clock ticks)")
         plt.title("Intervals from: "+self.file_names[trial])
