@@ -14,8 +14,10 @@ def average_run(run_list):
 class Unpack:
     def __init__(self):
         self.file_names = names.generate_roots()
-        self.run = self.unload_single_root(self.file_names[1])
-        average_run(self.run)
+        self.print_roots()
+        request = raw_input("Root name: ")
+        self.run = self.unload_single_root(request)
+        self.run = average_run(self.run)
         self.plot_single()
 
     def unload_single_root(self, root_name):
@@ -30,8 +32,11 @@ class Unpack:
 
     def plot_single(self):
         run = self.run
-        plt.plot(run[0][:, 1])
+        plt.plot(run[:, 1])
         plt.show()
 
+    def print_roots(self):
+        for f in self.file_names:
+            print f
 
 u = Unpack()

@@ -1,6 +1,6 @@
 # Ignoring the lab guide
 
-Lab*-2016.pdf
+*.pdf
 *.txt
 *.aux
 *.log
