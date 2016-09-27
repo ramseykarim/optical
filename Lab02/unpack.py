@@ -21,7 +21,10 @@ class Unpack:
     def __init__(self):
         self.file_names = names.generate_roots()
         self.spectra = {}
+
+    def __repr__(self):
         self.print_roots()
+        return "Unpack object. Use REQUEST_LOOP to select a spectrum."
 
     def unload_single_root(self, root_name):
         if root_name not in self.file_names:
