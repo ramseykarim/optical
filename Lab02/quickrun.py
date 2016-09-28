@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 c = cal.Calibrate(up.Unpack())
 all_wavelengths = np.array(cal.MERCURY_PEAKS + cal.NEON_PEAKS)
 pixels = np.arange(2048)
+
 deg1 = c.wavelength_fit(degree=1)
 deg2 = c.wavelength_fit(degree=2)
 deg3 = c.wavelength_fit(degree=3)
@@ -22,6 +23,7 @@ plt.ylabel("Intensity")
 plt.title("Measured Spectra for Ne and Hg with peaks")
 
 plt.figure(2)
+
 plt.subplot(221)
 plt.plot(c.neon_centroids, cal.NEON_PEAKS, 'o', color='blue')
 plt.plot(c.mercury_centroids, cal.MERCURY_PEAKS, 'o', color='blue')
@@ -50,6 +52,7 @@ plt.plot(c.peaks, deg3comp, 'o', color='green')
 plt.xlabel("Pixel")
 plt.ylabel("Difference (A)")
 plt.title("3rd Degree fit comparison")
+
 plt.tight_layout()
 
 plt.show()
