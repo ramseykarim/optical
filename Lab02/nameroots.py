@@ -1,6 +1,6 @@
 import subprocess
 """
-This process unpacks the first half of the filenames
+This process unpacks the first half of the file names
 contained in SpectralData. The second half consists
 of 5 numbers, with leading zeros. Most of the numbers
 only go up to 100.
