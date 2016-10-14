@@ -1,0 +1,88 @@
+\documentclass{aa}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{txfonts}
+\newcommand{\dg}{^{\circ}}
+\newcommand{\e}[1]{10^{#1}}
+% Plot Commands
+\newcommand{\halfplot}[2]{
+	\begin{figure}[!hbt]
+		\centering
+		\includegraphics[width=0.5\textwidth]{#1.pdf}
+		\caption{\label{fig:#1}#2}
+	\end{figure}
+}
+\newcommand{\fullplot}[2]{
+	\begin{figure*}[!hbt]
+		\centering
+		\includegraphics[width=\textwidth]{#1.pdf}
+		\caption{\label{fig:#1}#2}
+	\end{figure*}	
+}
+
+\begin{document}
+
+\title{Lab Number}
+\subtitle{Title}
+\author{Ramsey Karim \\ with Isabel Angelo, Thomas Fitzpatrick, and Hope Miranda}
+\institute{University of California, Berkeley \\ ORDERS OF RADITUDE Research Group \\
+Contanct: {\sl rkarim@berkeley.edu}}
+\date{\today}
+
+\abstract{
+	INSERT ABSTRACT HERE
+}
+
+\maketitle
+
+% -------------------- Templates and Examples -------------------
+
+% Images:
+
+% \begin{figure}[!hbt]
+% 	\centering
+% 	\includegraphics[width=0.5\textwidth]{******.pdf}
+% 	\caption{\label{fig:******}*caption*}
+% \end{figure}
+
+
+% Full width images:
+
+% \begin{figure*}[!hbt]
+% 	\centering
+% 	\includegraphics[width=\textwidth]{******.pdf}
+% 	\caption{\label{fig:******}*caption*}
+% \end{figure*}
+
+
+
+% ------------------------- Outline ----------------------------
+
+
+
+% ---------------------- SECTION 1 -----------------------------
+\section{Introduction} \label{s:1}
+
+
+
+% ---------------------- SECTION 2 -----------------------------
+\section{Data} \label{s:2}
+
+
+
+% ---------------------- SECTION 3 -----------------------------
+\section{Analysis} \label{s:3}
+
+
+
+% ---------------------- SECTION 4 -----------------------------
+\section{Results} \label{s:4}
+
+
+
+% ---------------------- SECTION 5 -----------------------------
+\section{Conclusion} \label{s:5}
+
+
+\end{document}

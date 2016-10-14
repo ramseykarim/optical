@@ -46,7 +46,7 @@ def plot_peaks(run, peaks):
     plt.plot(run, color='k')
     m = np.max(run)
     for p in peaks:
-        plt.plot([p, p], [0, m], color='g')
+        plt.plot([p], [-50], 'o', color='r')
 
 
 def neon_peak_cutoff(spectrum, peaks):
@@ -84,14 +84,10 @@ def mercury_centroid_cutoff(spectrum, peak):
 
 
 def dark_adjust(spec_set, dark_average):
-    new_spec_set = []
-    for spectrum in spec_set:
-        new_spec_set.append(spectrum - dark_average)
-    return new_spec_set
+    return [spectrum - dark_average for spectrum in spec_set]
 
 
 def centroid_set(spectrum_list, s_type):
-    print "LIST SIZE: ", spectrum_list.__len__()
     centroids = []
     count = 0
     num_centroids = []
@@ -100,62 +96,101 @@ def centroid_set(spectrum_list, s_type):
     elif s_type == "mercury":
         peak_requirement = 3
     else:
-        print "Ya done fucked up at PEAK_VARIATION"
-        raise RuntimeError
-    print "Dark subtracting...",
+        raise RuntimeError("Ya done fucked up at PEAK_VARIATION")
     for spectrum in spectrum_list:
         c = find_centroid(spectrum, s_type)
         num_centroids.append(c.size)
         if c.size != peak_requirement:
             count += 1
         centroids.append(c)
-    print " done."
-    print "Fuck up count: ", count
     best_locations = np.where(np.array(num_centroids) == peak_requirement)[0]
     best_centroids = [centroids[x] for x in best_locations] if s_type == "neon" else centroids
     return np.array(best_centroids)
+
+
+def peak_variation(spec_set, s_type):
+    if s_type != "neon" and s_type != "mercury":
+        raise RuntimeError("That's not a valid type for AVERAGE_WITH_ERROR")
+    best_centroids = centroid_set(spec_set, s_type)
+    error_propagation = ep.SingleSpectrumSet(best_centroids)
+    return error_propagation
 
 
 class Calibrate:
     def __init__(self, unpacker):
         self.unpacker = unpacker
         self.dark_bias = False
-        self.neon_avg = False
-        self.mercury_avg = False
-        self.neon_avg_centroids = False
-        self.mercury_avg_centroids = False
         self.peaks = False
-        self.generate_calibration_data()
+        self.averaged_cal_spectrum = False
+        self.error_propagation = False
+        self.generate_wavelength_calibration_data()
+        self.wavelength_calibration = self.wavelength_fit_bootstrap()
+        self.adu = False
+        self.gain_factor = False
+        self.read_noise = False
+        self.gain_calibration()
 
-    def wavelength_fit_averaged(self, degree=2):
+    def wavelength_fit_averaged(self):
         all_wavelengths = np.array(lls.ALL_PEAK_ARRAY)
         assert isinstance(self.peaks, np.ndarray)
-        fit = lls.poly_fit(self.peaks, all_wavelengths, degree=degree)
-        pixel_range = np.arange(2048)
-        wavelength_solution = np.zeros(2048)
-        for power, coefficient in enumerate(fit[::-1]):
-            wavelength_solution += coefficient * np.power(pixel_range, power)
-        return wavelength_solution
+        fit = lls.poly_fit(all_wavelengths, self.peaks)
+        return lls.apply_fit(2048, fit)
 
-    def generate_calibration_data(self):
-        m, n = "mercury", "neon"
+    def wavelength_fit_bootstrap(self):
+        assert isinstance(self.error_propagation, ep.ErrorPropagation)
+        return lls.apply_fit(2048, self.error_propagation.bootstrap_lls(500).fit)
+
+    def obtain_dark_subtract_set(self, s_type):
+        names = {"mercury": 0, "neon": 1, "ADU": 2}
         # noinspection SpellCheckingInspection
-        md, nd = "darks_020", "darks_100"
-        mercury_sets = self.unpacker.obtain(m)
-        mercury_dark = up.average_run(self.unpacker.obtain(md))
-        mercury_sets = dark_adjust(mercury_sets, mercury_dark)
-        mercury_best = centroid_set(mercury_sets, m)
-        mercury_error_propagation = ep.SingleSpectrumPeakSet(mercury_best)
-        self.mercury_avg = up.average_run(mercury_sets)
-        self.mercury_avg_centroids = find_centroid(self.mercury_avg, m)
-        neon_sets = self.unpacker.obtain(n)
-        neon_dark = up.average_run(self.unpacker.obtain(nd))
-        neon_sets = dark_adjust(neon_sets, neon_dark)
-        neon_best = centroid_set(neon_sets, n)
-        neon_error_propagation = ep.SingleSpectrumPeakSet(neon_best)
-        self.neon_avg = up.average_run(neon_sets)
-        self.neon_avg_centroids = find_centroid(self.neon_avg, n)
-        self.peaks = np.append(self.mercury_avg_centroids, self.neon_avg_centroids)
-        e_prop = ep.ErrorPropagation(mercury_error_propagation, neon_error_propagation)
-        e_prop.bootstrap_lls(5)
+        darks = ["darks_020", "darks_100", "bias_dark_03"]
+        if s_type not in names:
+            raise RuntimeError("That's not a valid calibration spectrum")
+        dark = darks[names[s_type]]
+        spec_set = self.unpacker.obtain(s_type)
+        dark = up.average_run(self.unpacker.obtain(dark))
+        spec_set = dark_adjust(spec_set, dark)
+        return spec_set
+
+    def generate_wavelength_calibration_data(self):
+        m, n = "mercury", "neon"
+        mercury_sets = self.obtain_dark_subtract_set(m)
+        mercury_error_propagation = peak_variation(mercury_sets, m)
+        neon_sets = self.obtain_dark_subtract_set(n)
+        neon_error_propagation = peak_variation(neon_sets, n)
+        self.peaks = np.append(mercury_error_propagation.mean(), neon_error_propagation.mean())
+        self.averaged_cal_spectrum = up.average_run(mercury_sets) + up.average_run(neon_sets)
+        self.error_propagation = ep.ErrorPropagation(mercury_error_propagation, neon_error_propagation)
+
+    def wavelength_error(self, pixel):
+        assert isinstance(self.error_propagation, ep.ErrorPropagation)
+        a, b, c = self.error_propagation.fit
+        ae, be, ce = self.error_propagation.fit_error
+        error_in_a = lls.lambda_da(a, b, c, pixel) * ae
+        error_in_b = lls.lambda_db(a, b, c, pixel) * be
+        error_in_c = lls.lambda_dc(a, b, c, pixel) * ce
+        error_total = error_in_a**2. + error_in_b**2. + error_in_c**2.
+        return np.sqrt(error_total)
+
+    def gain_calibration(self):
+        adu_sets = np.array(self.obtain_dark_subtract_set("ADU"))
+        self.adu = ep.SingleSpectrumSet(adu_sets)
+        mean = self.adu.mean()
+        std = self.adu.std()
+        self.gain_factor, self.read_noise = lls.poly_fit(mean, std**2., degree=1)
+        print "GAIN", self.gain_factor
+        print "READ NOISE", self.read_noise
+
+    def plot_gain_cal(self):
+        assert isinstance(self.adu, ep.SingleSpectrumSet)
+        mean = self.adu.mean()
+        std = self.adu.std()
+        plt.figure(5)
+        plt.plot(mean, std**2., '.', color='blue')
+        model = (self.gain_factor * mean) + self.read_noise
+        plt.plot(mean, model, '-', color='black')
+        plt.xscale('log', base=10)
+        plt.yscale('log', base=10)
+        plt.xlabel("Mean (ADU)", fontsize=16, family='serif')
+        plt.ylabel("Variance (ADU$^{2}$)", fontsize=16, family='serif')
 

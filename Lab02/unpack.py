@@ -71,6 +71,8 @@ class Unpack:
                 break
             elif request.lower() == "print":
                 self.print_roots()
+            elif request.lower() == "show":
+                plt.show()
             else:
                 try:
                     result = self.obtain(request)
