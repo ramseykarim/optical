@@ -6,6 +6,7 @@ import getsortedfields as gsf
 MAIN_PATH = "/home/rkarim/flatfields/"
 FLAT_PATH = "_band/"
 DARK_PATH = "_band_darks/"
+MAP_PATH = "./ResponseMaps/"
 DIM_1 = 1336
 DIM_2 = 2004
 
@@ -51,6 +52,7 @@ def process_flat(file_name_list):
     [quick_fits_append(f) for f in file_name_list]
     data_stack = nonlocal_variables['data_stack']
     mean_list = nonlocal_variables['mean_list']
+    print "!\nDone opening/processing FLAT directory."
     return data_stack, mean_list
 
 
@@ -68,11 +70,8 @@ def process_dark(file_name_list):
         Quickly builds a sum array from FITS file data.
         For use with DARK frames.
         THIS FUNCTION MODIFIES INPUTS!
-        :param data_pile: Already-initialized array of the same dimensions
-        as a single FITS array.
-        Is modified.
         :param file_name: String name of FITS file.
-        :return: Function does not return. It modifies the first input.
+        :return: Function does not return. It modifies an existing array.
         """
         print '.',
         data = fits_open(file_name)
@@ -97,7 +96,7 @@ def generate_response_map(cube, mean_list):
     responses = np.zeros([DIM_1, DIM_2])
     print "Calculating response map..."
     for i in range(DIM_1):
-        print "\t{0:.2f}%\r".format((float(i)/DIM_1) * 100.),
+        print "{0:.2f}%\r".format((float(i)/DIM_1) * 100.),
         for j in range(DIM_2):
             response = get_slope(cube[:, i, j])
             responses[i, j] = response
@@ -142,54 +141,11 @@ class ResponseMap:
 
     def write_response_map(self):
         hdu = pf.PrimaryHDU(self.response_map)
-        hdu.writeto(self.band.lower() + "_band_response_map.fts")
+        hdu.writeto(MAP_PATH + self.band.lower() + "_band_response_map.fts")
 
     def plot_response_map(self):
         plt.imshow(self.response_map)
         plt.title(self.band + " Band Response Map")
         plt.colorbar()
         plt.show()
-
-
-# def unpack(band_name):
-#     return_list = np.zeros([1336, 2004])
-#     counter = 0
-#     for f in glob(MAIN_PATH + band_name):
-#         print '.',
-#         hdu_list = pf.open(f)
-#         return_list += hdu_list[0].data
-#         hdu_list.close()
-#         counter += 1
-#     print '!'
-#     return return_list / counter
-#
-#
-# def produce_response(band):
-#     band_list = unpack(band + FLAT_PATH)
-#     band_dark_list = unpack(band + DARK_PATH)
-#     band_field = band_list - band_dark_list
-#     band_hdu = pf.PrimaryHDU(band_field)
-#     band_hdu.writeto(band + "_band_response_map.fts")
-#     return band_field
-#
-#
-# def recover_response(band):
-#     hdu = pf.open(band + "_band_response_map.fts")[0]
-#     return hdu.data
-#
-#
-# r_band_field = recover_response('r')
-# v_band_field = recover_response('v')
-#
-# color_map = "gist_earth"
-#
-# plt.figure(1)
-# plt.imshow(r_band_field, cmap=color_map)
-# plt.title("R Band")
-# plt.colorbar()
-# plt.figure(2)
-# plt.imshow(v_band_field, cmap=color_map)
-# plt.title("V Band")
-# plt.colorbar()
-# plt.show()
 
