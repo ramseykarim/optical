@@ -38,7 +38,7 @@ def quick_fits_append(data_stack, mean_list, file_name):
     """
     print '.',
     data = fits_open(file_name)
-    data_stack = np.concatenate(data_stack, data)
+    data_stack = np.concatenate([data_stack, [data]])
     mean_list = np.append(mean_list, np.mean(data))
     return
 
@@ -94,7 +94,7 @@ def generate_response_map(cube, mean_list):
     :param mean_list: The list of means for each of n flats
     :return: Array (DIM_1 x DIM_2) of fitted slopes
     """
-    x = np.concatenate([[mean_list], np.ones(len(mean_list))])
+    x = np.concatenate([[mean_list], [np.ones(len(mean_list))]])
     get_slope = make_slope_function(x)
     responses = np.zeros([DIM_1, DIM_2])
     print "Calculating response map..."
