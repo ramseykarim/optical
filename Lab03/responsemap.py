@@ -94,8 +94,7 @@ def generate_response_map(cube, mean_list):
     :param mean_list: The list of means for each of n flats
     :return: Array (DIM_1 x DIM_2) of fitted slopes
     """
-    x = np.concatenate([[mean_list], [np.ones(len(mean_list))]])
-    get_slope = make_slope_function(x)
+    get_slope = make_slope_function(mean_list)
     responses = np.zeros([DIM_1, DIM_2])
     print "Calculating response map..."
     for i in range(DIM_1):
@@ -109,13 +108,7 @@ def generate_response_map(cube, mean_list):
 
 def make_slope_function(x_in):
     def get_slope(y_in):
-        print "X^T SHAPE: ", x_in.shape
-        x = np.copy(x_in).transpose()
-        print "X SHAPE: ", x.shape
-        square_matrix = np.dot(x_in, x)
-        print "SQ MTX SHAPE: ", square_matrix.shape
-        square_matrix = np.linalg.inv(square_matrix)
-        a = np.dot(np.dot(square_matrix, x_in), y_in.transpose())
+        a = np.polyfit(x_in, y_in, deg=1)
         return a[0]
     return get_slope
 
