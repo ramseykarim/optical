@@ -46,11 +46,13 @@ def process_flat(file_name_list):
     :param file_name_list: List of string file names.
     :return: Data cube (n x DIM_1 x DIM_2) and mean list (n)
     """
-    data_cube = np.array([]).reshape(0, DIM_1, DIM_2)
+    data_stack = np.array([]).reshape(0, DIM_1, DIM_2)
     mean_list = np.array([])
+    nonlocal_variables = {'mean_list': mean_list,
+                          'data_stack': data_stack}
 
     # noinspection PyUnresolvedReferences
-    def quick_fits_append(data_stack, file_name):
+    def quick_fits_append(file_name):
         """
         Quickly builds up a cube of FITS file data.
         For use with FLAT frames.
@@ -62,16 +64,16 @@ def process_flat(file_name_list):
         """
         print '.',
         data = fits_open(file_name)
-        data_stack = np.concatenate([data_stack, [data]])
-        mean_list = np.append(mean_list, np.mean(data))
+        nonlocal_variables['data_stack'] = np.concatenate([nonlocal_variables['data_stack'], [data]])
+        nonlocal_variables['mean_list'] = np.append(nonlocal_variables['mean_list'], np.mean(data))
         return
 
-    [quick_fits_append(data_cube, f) for f in file_name_list]
+    [quick_fits_append(f) for f in file_name_list]
     print "!\nDone opening/processing FLAT directory."
-    print "DATA CUBE SHAPE: ", data_cube.shape
-    print data_cube
+    print "DATA CUBE SHAPE: ", data_stack.shape
+    print data_stack
     print "MEAN LIST SHAPE: ", mean_list.shape
-    return data_cube, mean_list
+    return data_stack, mean_list
 
 
 def process_dark(file_name_list):
