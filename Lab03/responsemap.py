@@ -5,8 +5,8 @@ from glob import glob
 import getsortedfields as gsf
 
 MAIN_PATH = "/home/rkarim/flatfields/"
-FLAT_PATH = "_band/*.fts"
-DARK_PATH = "_band_darks/*.fts"
+FLAT_PATH = "_band/"
+DARK_PATH = "_band_darks/"
 DIM_1 = 1336
 DIM_2 = 2004
 
