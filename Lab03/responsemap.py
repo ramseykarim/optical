@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pyfits as pf
-from glob import glob
 import getsortedfields as gsf
 
 MAIN_PATH = "/home/rkarim/flatfields/"
