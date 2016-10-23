@@ -70,6 +70,9 @@ def process_flat(file_name_list):
     mean_list = np.array([])
     [quick_fits_append(data_cube, mean_list, f) for f in file_name_list]
     print "!\nDone opening/processing FLAT directory."
+    print "DATA CUBE SHAPE: ", data_cube.shape
+    print data_cube
+    print "MEAN LIST SHAPE: ", mean_list.shape
     return data_cube, mean_list
 
 
