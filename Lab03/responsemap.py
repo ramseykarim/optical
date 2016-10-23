@@ -109,7 +109,12 @@ def generate_response_map(cube, mean_list):
 
 def make_slope_function(x_in):
     def get_slope(y_in):
-        square_matrix = np.linalg.inv(np.dot(x_in, x_in.transpose()))
+        print "X^T SHAPE: ", x_in.shape
+        x = np.copy(x_in).transpose()
+        print "X SHAPE: ", x.shape
+        square_matrix = np.dot(x_in, x)
+        print "SQ MTX SHAPE: ", square_matrix.shape
+        square_matrix = np.linalg.inv(square_matrix)
         a = np.dot(np.dot(square_matrix, x_in), y_in.transpose())
         return a[0]
     return get_slope
