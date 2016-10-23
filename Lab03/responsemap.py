@@ -23,26 +23,6 @@ def fits_open(file_name):
     return data
 
 
-# noinspection PyUnusedLocal
-def quick_fits_append(data_stack, mean_list, file_name):
-    """
-    Quickly builds up a cube of FITS file data.
-    For use with FLAT frames.
-    THIS FUNCTION MODIFIES INPUTS!
-    :param data_stack: Already-initialized array of correct 3D dimension.
-    Is modified.
-    :param mean_list: Already-initialized array for each mean value.
-    Is modified.
-    :param file_name: String name of FITS file.
-    :return: Function does not return. It modifies the first two inputs.
-    """
-    print '.',
-    data = fits_open(file_name)
-    data_stack = np.concatenate([data_stack, [data]])
-    mean_list = np.append(mean_list, np.mean(data))
-    return
-
-
 def quick_fits_collapse(data_pile, file_name):
     """
     Quickly builds a sum array from FITS file data.
@@ -68,7 +48,25 @@ def process_flat(file_name_list):
     """
     data_cube = np.array([]).reshape(0, DIM_1, DIM_2)
     mean_list = np.array([])
-    [quick_fits_append(data_cube, mean_list, f) for f in file_name_list]
+
+    # noinspection PyUnresolvedReferences
+    def quick_fits_append(data_stack, file_name):
+        """
+        Quickly builds up a cube of FITS file data.
+        For use with FLAT frames.
+        THIS FUNCTION MODIFIES INPUTS!
+        :param data_stack: Already-initialized array of correct 3D dimension.
+        Is modified.
+        :param file_name: String name of FITS file.
+        :return: Function does not return. It modifies the first two inputs.
+        """
+        print '.',
+        data = fits_open(file_name)
+        data_stack = np.concatenate([data_stack, [data]])
+        mean_list = np.append(mean_list, np.mean(data))
+        return
+
+    [quick_fits_append(data_cube, f) for f in file_name_list]
     print "!\nDone opening/processing FLAT directory."
     print "DATA CUBE SHAPE: ", data_cube.shape
     print data_cube
@@ -134,15 +132,15 @@ class ResponseMap:
         self.response_map = False
         self.unpack()
         self.write_response_map()
-        self.plot_response_map()
+        # self.plot_response_map()
 
     def unpack(self):
         flat_file_names = gsf.generate_names(MAIN_PATH + self.band + FLAT_PATH)
         cube, means = process_flat(flat_file_names)
-        dark_file_names = gsf.generate_names(MAIN_PATH + self.band + DARK_PATH)
-        dark_average = process_dark(dark_file_names)
-        cube -= dark_average
-        self.response_map = generate_response_map(cube, means)
+        # dark_file_names = gsf.generate_names(MAIN_PATH + self.band + DARK_PATH)
+        # dark_average = process_dark(dark_file_names)
+        # cube -= dark_average
+        # self.response_map = generate_response_map(cube, means)
 
     def write_response_map(self):
         hdu = pf.PrimaryHDU(self.response_map)
