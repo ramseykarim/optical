@@ -69,6 +69,8 @@ def process_flat(file_name_list):
         return
 
     [quick_fits_append(f) for f in file_name_list]
+    data_stack = nonlocal_variables['data_stack']
+    mean_list = nonlocal_variables['mean_list']
     print "!\nDone opening/processing FLAT directory."
     print "DATA CUBE SHAPE: ", data_stack.shape
     print data_stack
@@ -133,7 +135,7 @@ class ResponseMap:
         self.band = band.upper()
         self.response_map = False
         self.unpack()
-        self.write_response_map()
+        # self.write_response_map()
         # self.plot_response_map()
 
     def unpack(self):
