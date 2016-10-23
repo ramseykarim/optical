@@ -7,6 +7,7 @@ def generate_names(path):
                                stdout=subprocess.PIPE)
     output, error = process.communicate()
     file_name_list = output.split("\n")
+    file_name_list.pop()
     return file_name_prefix_list(file_name_list, path)
 
 
