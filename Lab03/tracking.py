@@ -23,4 +23,4 @@ class Tracking:
         data_dark_sub -= np.median(data_dark_sub)
         return data_dark_sub
 
-
+    # add in flattening here
