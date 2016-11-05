@@ -55,22 +55,16 @@ class Tracking:
 
 def find_centroid_in_range(science_frame, initial_x, initial_y,
                            search_radius, coarse_radius, fine_radius):
-    lo_x, hi_x = initial_x - search_radius, initial_x + search_radius
-    lo_y, hi_y = initial_y - search_radius, initial_y + search_radius
-    search_box = science_frame[lo_x:hi_x, lo_y:hi_y]
-    x_c, y_c = centroid_2d(search_box)
-    x_c, y_c = x_c + lo_x, y_c + lo_y
-    x_max, y_max = find_centroid_helper(science_frame, initial_x, initial_y, search_radius)
-    x_max, y_max = x_max - lo_x, y_max - lo_y
-    # np.where(search_box == np.max(search_box))
-    lo_x_f, hi_x_f = x_max - coarse_radius, x_max + coarse_radius
-    lo_y_f, hi_y_f = y_max - coarse_radius, y_max + coarse_radius
-    star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
-    x_c_f, y_c_f = centroid_2d(star_box)
-    lo_x_ff, hi_x_ff = x_c_f - fine_radius, x_c_f + fine_radius
-    lo_y_ff, hi_y_ff = y_c_f - fine_radius, y_c_f + fine_radius
-    star_box = star_box[lo_x_ff:hi_x_ff, lo_y_ff:hi_y_ff]
-    x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
+    search_box = image_partition(science_frame, initial_x, initial_y, search_radius)
+    x_c, y_c = find_centroid_helper(science_frame, initial_x, initial_y, search_radius)
+    x_max, y_max = np.where(science_frame == np.max(science_frame))
+    print "Maxes:"
+    print x_c, x_max
+    print y_c, y_max
+    print "-------"
+    assert np.max(search_box) == np.max(science_frame)
+    x_c_f, y_c_f = find_centroid_helper(science_frame, x_c, y_c, coarse_radius)
+    star_box = image_partition(science_frame, x_c_f, y_c_f, fine_radius)
     plt.figure()
     plt.imshow(star_box)
     print x_c, y_c
@@ -80,12 +74,17 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
 
 
 def find_centroid_helper(frame, initial_x, initial_y, radius):
-    lo_x, hi_x = initial_x - radius, initial_x + radius
-    lo_y, hi_y = initial_y - radius, initial_y + radius
-    search_box = frame[lo_x:hi_x, lo_y:hi_y]
+    search_box, lo_x, lo_y = image_partition(frame, initial_x, initial_y, radius)
     x_c, y_c = centroid_2d(search_box)
     x_c, y_c = x_c + lo_x, y_c + lo_y
     return x_c, y_c
+
+
+def image_partition(frame, initial_x, initial_y, radius):
+    lo_x, hi_x = initial_x - radius, initial_x + radius
+    lo_y, hi_y = initial_y - radius, initial_y + radius
+    search_box = frame[lo_x:hi_x, lo_y:hi_y]
+    return search_box, lo_x, lo_y
 
 
 def centroid(y):
@@ -96,8 +95,6 @@ def centroid(y):
 def centroid_2d(box):
     x_centroid = centroid(np.sum(box, axis=1))
     y_centroid = centroid(np.sum(box, axis=0))
-    print x_centroid
-    print y_centroid
     return x_centroid, y_centroid
 
 
