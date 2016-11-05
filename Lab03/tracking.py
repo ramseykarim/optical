@@ -25,8 +25,8 @@ class Tracking:
         self.data = False
         self.file_names = gsf.generate_names(HAT_SCI_PATH)
 
-    def file_grab(self, name):
-        return gsf.fits_open(name)
+    def file_grab(self, index):
+        return gsf.fits_open(self.file_names[index])
 
     def dark_subtract(self, science_frame):
         return science_frame - self.dark_frame
@@ -37,11 +37,22 @@ class Tracking:
     def make_adjustments(self, science_frame):
         return median_subtract(self.flatten(self.dark_subtract(science_frame)))
 
-    def find_science_star(self, science_frame):
-        plt.imshow(science_frame)
+    def find_science_star(self, index):
+        science_frame = self.file_grab(index)
+        science_frame = self.make_adjustments(science_frame)
+        row_sum = np.sum(science_frame, axis=0)
+        print science_frame.shape
+        col_sum = np.sum(science_frame, axis=1)
+        print "ROW", row_sum.shape
+        print "COL", col_sum.shape
+        plt.figure()
+        plt.plot(row_sum)
+        plt.title('row')
+        plt.figure()
+        plt.plot(col_sum)
+        plt.title('col')
         plt.show()
 
 
 t = Tracking()
-t.data = t.make_adjustments(t.file_grab(t.file_names[0]))
-t.find_science_star(t.data)
+t.find_science_star(0)
