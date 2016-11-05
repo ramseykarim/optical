@@ -38,7 +38,7 @@ class Tracking:
         return median_subtract(self.flatten(self.dark_subtract(science_frame)))
 
     def find_science_star(self, index, initial_x, initial_y,
-                          search_radius=50, coarse_radius=20, fine_radius=10):
+                          search_radius=50, coarse_radius=20, fine_radius=15):
         science_frame = self.file_grab(index)
         science_frame = self.make_adjustments(science_frame)
         find_centroid_in_range(science_frame, initial_x, initial_y, search_radius,
