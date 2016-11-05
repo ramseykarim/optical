@@ -68,23 +68,27 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     x_max, y_max = np.where(search_box == np.max(search_box))
     lo_x_f, hi_x_f = x_max - fine_radius, x_max + fine_radius
     lo_y_f, hi_y_f = y_max - fine_radius, y_max + fine_radius
-    star_box = search_box[lo_x_f:hi_x_f, lo_y_f, hi_y_f]
+    star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
     x_c_f, y_c_f = centroid_2d(star_box)
     x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
-    print "ROUGH CENTROID: ({0:f}, {1:f})".format(x_c, y_c)
-    print "FINER CENTROID: ({0:f}, {1:f})".format(x_c_f, y_c_f)
+    print x_c, y_c
+    print x_c_f, y_c_f
+#    print "ROUGH CENTROID: ({0:f}, {1:f})".format(x_c, y_c)
+#    print "FINER CENTROID: ({0:f}, {1:f})".format(x_c_f, y_c_f)
 
 
 def centroid(y):
     x = np.arange(len(y))
-    return np.sum(x * y) / np.sum(x)
+    return np.sum(x * y) / np.sum(y)
 
 
 def centroid_2d(box):
     x_centroid = centroid(np.sum(box, axis=1))
     y_centroid = centroid(np.sum(box, axis=0))
+    print x_centroid
+    print y_centroid
     return x_centroid, y_centroid
 
 
 t = Tracking()
-t.find_science_star(0)
+t.find_science_star(0, 842, 857)
