@@ -69,8 +69,8 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     star_box = search_box[lo_x_f:hi_x_f, lo_y_f, hi_y_f]
     x_c_f, y_c_f = centroid_2d(star_box)
     x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
-    print "ROUGH CENTROID: (%f, %f)" % x_c, y_c
-    print "FINER CENTROID: (%f, %f)" % x_c_f, y_c_f
+    print "ROUGH CENTROID: ({0:f}, {1:f})".format(x_c, y_c)
+    print "FINER CENTROID: ({0:f}, {1:f})".format(x_c_f, y_c_f)
 
 
 def centroid(y):
