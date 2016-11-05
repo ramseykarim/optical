@@ -62,7 +62,9 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     print x_c, x_max
     print y_c, y_max
     print "-------"
-    assert np.max(search_box) == np.max(science_frame)
+    print np.max(search_box)
+    print np.max(science_frame)
+    print "-------"
     x_c_f, y_c_f = find_centroid_helper(science_frame, x_c, y_c, coarse_radius)
     star_box = image_partition(science_frame, x_c_f, y_c_f, fine_radius)
     plt.figure()
