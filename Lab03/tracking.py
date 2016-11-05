@@ -60,7 +60,9 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     search_box = science_frame[lo_x:hi_x, lo_y:hi_y]
     x_c, y_c = centroid_2d(search_box)
     x_c, y_c = x_c + lo_x, y_c + lo_y
-    x_max, y_max = np.where(search_box == np.max(search_box))
+    x_max, y_max = find_centroid_helper(science_frame, initial_x, initial_y, search_radius)
+    x_max, y_max = x_max - lo_x, y_max - lo_y
+    # np.where(search_box == np.max(search_box))
     lo_x_f, hi_x_f = x_max - coarse_radius, x_max + coarse_radius
     lo_y_f, hi_y_f = y_max - coarse_radius, y_max + coarse_radius
     star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
