@@ -65,9 +65,9 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     lo_y_f, hi_y_f = y_max - coarse_radius, y_max + coarse_radius
     star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
     x_c_f, y_c_f = centroid_2d(star_box)
-    lo_x_f, hi_x_f = x_c_f - fine_radius, x_c_f + fine_radius
-    lo_y_f, hi_y_f = y_c_f - fine_radius, y_c_f + fine_radius
-    star_box = star_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
+    lo_x_ff, hi_x_ff = x_c_f - fine_radius, x_c_f + fine_radius
+    lo_y_ff, hi_y_ff = y_c_f - fine_radius, y_c_f + fine_radius
+    star_box = star_box[lo_x_ff:hi_x_ff, lo_y_ff:hi_y_ff]
     x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
     plt.figure()
     plt.imshow(star_box)
@@ -75,6 +75,15 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     print x_c_f, y_c_f
 #    print "ROUGH CENTROID: ({0:f}, {1:f})".format(x_c, y_c)
 #    print "FINER CENTROID: ({0:f}, {1:f})".format(x_c_f, y_c_f)
+
+
+def find_centroid_helper(frame, initial_x, initial_y, radius):
+    lo_x, hi_x = initial_x - radius, initial_x + radius
+    lo_y, hi_y = initial_y - radius, initial_y + radius
+    search_box = frame[lo_x:hi_x, lo_y:hi_y]
+    x_c, y_c = centroid_2d(search_box)
+    x_c, y_c = x_c + lo_x, y_c + lo_y
+    return x_c, y_c
 
 
 def centroid(y):
