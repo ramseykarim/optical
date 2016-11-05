@@ -41,25 +41,19 @@ class Tracking:
                           search_radius=50, fine_radius=50):
         science_frame = self.file_grab(index)
         science_frame = self.make_adjustments(science_frame)
-        find_centroid_in_range(science_frame, initial_x, initial_y)
+        find_centroid_in_range(science_frame, initial_x, initial_y, search_radius, fine_radius)
         row_sum = np.sum(science_frame, axis=1)
         print science_frame.shape
         col_sum = np.sum(science_frame, axis=0)
         print "ROW", row_sum.shape
         print "COL", col_sum.shape
         plt.figure()
-        plt.plot(row_sum)
-        plt.title('row')
-        plt.figure()
-        plt.plot(col_sum)
-        plt.title('col')
-        plt.figure()
         plt.imshow(science_frame)
         plt.show()
 
 
 def find_centroid_in_range(science_frame, initial_x, initial_y,
-                           search_radius=50, fine_radius=20):
+                           search_radius, fine_radius):
     lo_x, hi_x = initial_x - search_radius, initial_x + search_radius
     lo_y, hi_y = initial_y - search_radius, initial_y + search_radius
     search_box = science_frame[lo_x:hi_x, lo_y:hi_y]
@@ -69,6 +63,8 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     lo_x_f, hi_x_f = x_max - fine_radius, x_max + fine_radius
     lo_y_f, hi_y_f = y_max - fine_radius, y_max + fine_radius
     star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
+    plt.figure()
+    plt.imshow(star_box)
     x_c_f, y_c_f = centroid_2d(star_box)
     x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
     print x_c, y_c
