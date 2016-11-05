@@ -67,7 +67,7 @@ def find_centroid_in_range(science_frame, initial_x, initial_y,
     x_c_f, y_c_f = centroid_2d(star_box)
     lo_x_f, hi_x_f = x_c_f - fine_radius, x_c_f + fine_radius
     lo_y_f, hi_y_f = y_c_f - fine_radius, y_c_f + fine_radius
-    star_box = search_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
+    star_box = star_box[lo_x_f:hi_x_f, lo_y_f:hi_y_f]
     x_c_f, y_c_f = x_c_f + lo_x + lo_x_f, y_c_f + lo_y + lo_y_f
     plt.figure()
     plt.imshow(star_box)
