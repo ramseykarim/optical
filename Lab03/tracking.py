@@ -51,6 +51,8 @@ class Tracking:
         plt.figure()
         plt.plot(col_sum)
         plt.title('col')
+        plt.figure()
+        plt.imshow(science_frame)
         plt.show()
 
 
