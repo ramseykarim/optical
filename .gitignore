@@ -8,3 +8,6 @@
 *.fts
 /Lab0*/WriteUp/*
 */.idea/*
+*.idea
+*/ResponseMaps/
+*/ResponseMaps/*
