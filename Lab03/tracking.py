@@ -57,8 +57,9 @@ class Tracking:
     def star_search_loop(self, index, initial_x, initial_y):
         science_frame = self.file_grab(index)
         science_frame = self.make_adjustments(science_frame)
+        print "SCIFRM MED", np.median(science_frame)
         self.find_initial('science', science_frame, initial_x, initial_y)
-        self.stars['science'].get_aperature(0)
+        self.stars['science'].get_aperture(0)
         # TODO write this function!
 
 

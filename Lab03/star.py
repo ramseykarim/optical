@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Star:
@@ -32,14 +33,13 @@ def find_background_noise(image):
     side_3 = image[3:dim_1 - 4, :3].flatten()
     side_4 = image[3:dim_1 - 4, dim_2 - 4:].flatten()
     noise_array = np.concatenate([side_1, side_2, side_3, side_4])
-    print noise_array.shape
 
 
 def find_centroid_in_range(science_frame, (initial_x, initial_y),
                            search_radius, coarse_radius, fine_radius):
     x_c, y_c, x_c_1, y_c_1 = find_centroid_helper(science_frame, (initial_x, initial_y), search_radius)
     x_c_f, y_c_f, x_c_1, y_c_1 = find_centroid_helper(science_frame, (x_c, y_c), coarse_radius)
-    star_box = image_partition(science_frame, (x_c_f, y_c_f), fine_radius)
+    star_box, lo_x, lo_y = image_partition(science_frame, (x_c_f, y_c_f), fine_radius)
     return x_c_f, y_c_f, x_c_1, y_c_1, star_box
 
 
@@ -70,6 +70,8 @@ def centroid_2d(box):
 
 class Frame:
     def __init__(self, (x_entire, y_entire, x, y, image)):
+        print "MEDIAN of IMG", np.median(image)
+
         self.x_entire = x_entire
         self.y_entire = y_entire
         self.x = x
