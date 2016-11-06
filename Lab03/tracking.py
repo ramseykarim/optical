@@ -25,7 +25,7 @@ def find_star(science_frame,
                                                            (initial_x, initial_y),
                                                            search_radius, coarse_radius,
                                                            fine_radius)
-    return x, y, star_box
+    return x_t, y_t, x, y, star_box
 
 
 class Tracking:
