@@ -8,6 +8,7 @@ class Star:
         self.identifier = identifier
         self.frames = []
         self.last_seen = (-1, -1)
+        self.power_array = -99
 
     def add_frame(self, x_y_img_tuple):
         assert isinstance(x_y_img_tuple, tuple)
@@ -17,6 +18,13 @@ class Star:
 
     def get_aperture(self, index):
         return find_aperture(self.frames[index])
+
+    def calculate_power(self, aperture):
+        print "Integrating star " + self.identifier.upper() + "...",
+        for f in self.frames:
+            f.get_total_power(aperture)
+        print "done"
+        self.power_array = [f.total_power for f in self.frames]
 
 
 class Frame:
@@ -28,7 +36,7 @@ class Frame:
         self.image = image
         self.total_power = -99
 
-    def get_total_power(self, radius):
+    def get_total_power(self, radius=9):
         self.total_power = integrate_aperture(self, radius)
 
 """
@@ -90,7 +98,6 @@ def find_background_noise(image):
     assert isinstance(image, np.ndarray)
     dim_1 = image.shape[0]
     dim_2 = image.shape[1]
-    print dim_1, dim_2
     side_1 = image[:3, :].flatten()
     side_2 = image[dim_1 - 4:, :].flatten()
     side_3 = image[3:dim_1 - 4, :3].flatten()
