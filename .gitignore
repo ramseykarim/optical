@@ -6,8 +6,9 @@
 *.log
 *.pyc
 *.fts
+/Lab0*/WriteUp/
 /Lab0*/WriteUp/*
 */.idea/*
-*.idea
+*.idea/
 */ResponseMaps/
 */ResponseMaps/*
