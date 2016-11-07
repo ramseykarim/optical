@@ -22,7 +22,7 @@ def median_subtract(science_frame):
 
 def find_star(science_frame,
               (initial_x, initial_y),
-              search_radius=50, coarse_radius=20, fine_radius=50):
+              search_radius=20, coarse_radius=10, fine_radius=30):
     x_t, y_t, x, y, star_box = star.find_centroid_in_range(science_frame,
                                                            (initial_x, initial_y),
                                                            search_radius, coarse_radius,
@@ -66,7 +66,7 @@ class Tracking:
         return science_frame / self.response_map
 
     def make_adjustments(self, science_frame):
-        return median_subtract(self.flatten(self.dark_subtract(science_frame)))
+        return image_filter(median_subtract(self.flatten(self.dark_subtract(science_frame))))
 
     def find_initial(self, identifier, science_frame,
                      (initial_x, initial_y)):
@@ -95,7 +95,7 @@ class Tracking:
                 try:
                     self.find_again(s, science_frame)
                 except IndexError:
-                    print self.file_names[i]
+                    print "fuck " + self.file_names[i]
             gc.collect()
         print "Done!"
 
@@ -118,7 +118,8 @@ class Tracking:
         plt.ion()
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.imshow(first_frame, cmap='Greys')
+        ax.imshow(first_frame, cmap='Greys',
+                  vmin=np.mean(first_frame), vmax=2.5*np.mean(first_frame))
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         print "Name a star and then click it. Enter 'd' when done."
         print "PLEASE name at least one star 'science'!"
@@ -141,40 +142,76 @@ class Tracking:
             print "Aborting"
             sys.exit(0)
         print "Beginning reduction"
+        plt.ion()
         self.star_search_loop(star_picks, aperture)
+        plt.ioff()
+        plt.close()
         for s in self.stars:
             self.stars[s].calculate_power(aperture['apt'])
-        first = np.array(self.stars['science'].power_array)
-        second = np.array(self.stars['ref1'].power_array)
-        third = np.array(self.stars['ref2'].power_array)
+        science = np.array(self.stars['science'].power_array)
+        science_e = np.array(self.stars['science'].error_array)
+        r1 = np.array(self.stars['ref1'].power_array)
+        r2 = np.array(self.stars['ref2'].power_array)
+        r3 = np.array(self.stars['ref3'].power_array)
+        r1e = np.array(self.stars['ref1'].error_array)
+        r2e = np.array(self.stars['ref2'].error_array)
+        r3e = np.array(self.stars['ref3'].error_array)
         plt.figure()
-        plt.subplot(131)
-        plt.title("F/S")
-        plt.plot(first/second)
+        plt.subplot(221)
+        plt.title("sci/R1")
+        ratio = science/r1
+        plt.errorbar(range(len(ratio)), ratio/ratio[0], yerr=0, fmt='.')
 
-        plt.subplot(132)
-        plt.title("S/T")
-        plt.plot(second/third)
+        plt.subplot(222)
+        plt.title("sci/R2")
+        ratio = science/r2
+        plt.errorbar(range(len(ratio)), ratio/ratio[0], yerr=0, fmt='.')
 
-        plt.subplot(133)
-        plt.title("F/T")
-        plt.plot(first/third)
+        plt.subplot(223)
+        plt.title("sci/R3")
+        ratio = science/r3
+        plt.errorbar(range(len(ratio)), ratio/ratio[0], yerr=0, fmt='.')
+
+        plt.subplot(224)
+        plt.title("R1/R2")
+        plt.errorbar(range(len(ratio)), r1/r2, yerr=0, fmt='.')
 
         plt.figure()
-        plt.subplot(131)
-        plt.title("first")
-        plt.plot(first)
+        plt.subplot(221)
+        plt.title("science")
+        plt.errorbar(range(len(science)), science, yerr=science_e, fmt='.')
 
-        plt.subplot(132)
-        plt.title("second")
-        plt.plot(second)
+        plt.subplot(222)
+        plt.title("R1")
+        plt.errorbar(range(len(r1)), r1, yerr=r1e, fmt='.')
 
-        plt.subplot(133)
-        plt.title("third")
-        plt.plot(third)
+        plt.subplot(223)
+        plt.title("R2")
+        plt.errorbar(range(len(r2)), r2, yerr=r2e, fmt='.')
+
+        plt.subplot(224)
+        plt.title("R3")
+        plt.errorbar(range(len(r3)), r3, yerr=r3e, fmt='.')
 
         plt.show()
 
 
+def image_filter(image):
+    image[np.where((image < 1.))] = 1.
+    return image
+
+
+
 t = Tracking()
+# d = t.file_grab(0)
+# d = t.make_adjustments(d)
+# plt.figure()
+# plt.imshow(d, cmap='Greys_r')
+# plt.title('raw')
+# plt.figure()
+# print np.min(d), np.max(d)
+# print np.log(np.max(d))
+# plt.imshow(np.log(d - np.min(d) + 1))
+# plt.title('log')
+# plt.show()
 t.master_loop()
