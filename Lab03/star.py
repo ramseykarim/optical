@@ -19,24 +19,27 @@ class Star:
         frame = Frame(x_y_img_tuple)
         self.frames.append(frame)
         self.last_seen = (frame.x_entire, frame.y_entire)
-        plt.figure(5)
-        plt.subplot(subplot_mgmt[self.identifier])
-        plt.imshow(frame.image)
-        plt.title(self.identifier + str(frame.x_entire) + ',' + str(frame.y_entire))
-        plt.draw()
+        # plt.figure(5)
+        # plt.subplot(subplot_mgmt[self.identifier])
+        # plt.imshow(frame.image)
+        # plt.title(self.identifier)
+        # plt.draw()
+
+    def duplicate_last(self):
+        self.frames.append(self.frames[len(self.frames) - 1].copy())
 
     def get_aperture(self, index):
-        # apt = find_aperture(self.frames[index])
-        # return apt if apt < 15 else 15
-        return 7
+        apt = find_aperture(self.frames[index])
+        return apt if apt < 15 else 15
+        # return 7
 
     def calculate_power(self, aperture):
         print "Integrating star " + self.identifier.upper() + "...",
         for f in self.frames:
             f.get_total_power(aperture)
         print "done"
-        self.power_array = [f.total_power for f in self.frames]
-        self.error_array = [f.power_error for f in self.frames]
+        self.power_array = np.array([f.total_power for f in self.frames])
+        self.error_array = np.array([f.power_error for f in self.frames])
 
 
 class Frame:
@@ -51,6 +54,10 @@ class Frame:
 
     def get_total_power(self, radius=9):
         self.total_power, self.power_error = integrate_aperture(self, radius)
+
+    def copy(self):
+        return Frame((self.x_entire, self.y_entire,
+                      self.x, self.y, self.image))
 
 """
 APERTURE
@@ -119,12 +126,12 @@ def find_background_noise(image):
     assert isinstance(image, np.ndarray)
     dim_1 = image.shape[0]
     dim_2 = image.shape[1]
-    side_1 = image[:3, :].flatten()
-    side_2 = image[dim_1 - 4:, :].flatten()
-    side_3 = image[3:dim_1 - 4, :3].flatten()
-    side_4 = image[3:dim_1 - 4, dim_2 - 4:].flatten()
+    side_1 = image[:5, :].flatten()
+    side_2 = image[dim_1 - 6:, :].flatten()
+    side_3 = image[5:dim_1 - 6, :5].flatten()
+    side_4 = image[5:dim_1 - 6, dim_2 - 6:].flatten()
     noise_array = np.concatenate([side_1, side_2, side_3, side_4])
-    total_noise = np.median(noise_array)
+    total_noise = np.std(noise_array)
     return total_noise
 
 
