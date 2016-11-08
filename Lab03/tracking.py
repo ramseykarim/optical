@@ -255,7 +255,7 @@ class Tracking:
         plt.ylabel("$\\langle R_{S} / R_{Ref} \\rangle$")
         plt.title("Normalized Light Curve of " + self.planet_name
                   + " || Depth: " + str(round((1 - depth) * 100, 2)) + "%")
-        plt.savefig(self.planet_name + "_lc.pdf", bbox_inches='tight')
+        plt.savefig(self.planet_name + "_lc_1.pdf", bbox_inches='tight')
         plt.show()
 
 
@@ -289,7 +289,7 @@ def light_curve(stars, aperture):
         ratios[i], ratio_errors[i] = norm_light_curve(ratios[i], ratio_errors[i])
     inverse_error_sum = sum([1 / (e ** 2.) for e in ratio_errors])
     lc = sum([r / (e ** 2.) for r, e in zip(ratios, ratio_errors)]) / inverse_error_sum
-    lc_e = np.sqrt(sum([1 / e for e in ratio_errors]) / inverse_error_sum)
+    lc_e = np.sqrt(sum([1 / (e ** 2.) for e in ratio_errors]) / (inverse_error_sum ** 2.))
     # norm = np.mean(lc[len(lc) - 12:])
     # lc, lc_e = lc / norm, lc_e / norm
     return lc, lc_e
