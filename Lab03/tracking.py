@@ -286,12 +286,19 @@ def light_curve(stars, aperture):
         ratios.append(science_p / ref_power[i])
         snr_ref = (ref_error[i] / ref_power[i]) ** 2.
         ratio_errors.append(np.sqrt(snr_sci + snr_ref) * ratios[i])
+        ratios[i], ratio_errors[i] = norm_light_curve(ratios[i], ratio_errors[i])
     inverse_error_sum = sum([1 / (e ** 2.) for e in ratio_errors])
     lc = sum([r / (e ** 2.) for r, e in zip(ratios, ratio_errors)]) / inverse_error_sum
     lc_e = np.sqrt(sum([1 / e for e in ratio_errors]) / inverse_error_sum)
-    norm = np.mean(lc[len(lc) - 12:])
-    lc, lc_e = lc / norm, lc_e / norm
+    # norm = np.mean(lc[len(lc) - 12:])
+    # lc, lc_e = lc / norm, lc_e / norm
     return lc, lc_e
+
+
+def norm_light_curve(lc, lc_e):
+    norm = np.median(np.concatenate([lc[:10], lc[len(lc) - 10:]]))
+    n_lc, n_lc_e = lc / norm, lc_e / norm
+    return n_lc, n_lc_e
 
 
 t = Tracking()
