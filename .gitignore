@@ -1,6 +1,7 @@
 # Ignoring the lab guide
 
 *.pdf
+*.png
 *.txt
 *.aux
 *.log
@@ -12,3 +13,5 @@
 *.idea/
 */ResponseMaps/
 */ResponseMaps/*
+*/debug/
+*/debug/*
