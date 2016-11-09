@@ -302,4 +302,7 @@ def norm_light_curve(lc, lc_e):
 
 
 t = Tracking()
-t.master_loop()
+first = t.file_grab(0)
+plt.imshow(first, cmap='Greys', vmin=np.mean(first), vmax=2.5 * np.mean(first))
+plt.show()
+#t.master_loop()
