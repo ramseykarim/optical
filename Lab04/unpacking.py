@@ -2,7 +2,7 @@ import subprocess
 import sys
 import numpy as np
 import pyfits as pf
-import re
+import re  # REGEX
 
 
 DIM_1 = 1024
