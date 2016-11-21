@@ -20,6 +20,13 @@ def integrate(array, where_list):
     return integral
 
 
+def simple_integrate(array, where_list):
+    integral = np.array([])
+    for where in where_list:
+        integral = np.append(integral, np.sum(array[where]))
+    return integral
+
+
 class Calibration:
     def __init__(self):
         self.u = up.Unpack()
@@ -50,15 +57,14 @@ class Calibration:
         return response
 
     def integrate_neon(self):
-        neon = self.u.get_neon()
+        neon = self.u.get_neon() / self.create_response()
         flat_map = self.spec_map()
-        integral = integrate(neon, flat_map)
         plt.figure()
-        plt.plot(integral)
-        neon /= self.create_response()
-        plt.figure()
-        integral = integrate(neon, flat_map)
-        plt.plot(integral)
+        hoffset = 0
+        for order in flat_map:
+            integral = simple_integrate(neon, order)
+            plt.plot(np.arange(len(integral)) + hoffset, integral)
+            hoffset += len(integral)
         plt.show()
 
     def integrate_halogen(self):
