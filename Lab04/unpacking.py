@@ -112,7 +112,7 @@ class Unpack:
         return dark_sub - np.median(dark_sub)
 
     def get_laser(self):
-        return self.prefix + self.laser
+        return fits_open(self.prefix + self.laser)
 
     def get_sun(self):
         return generate_names(self.prefix + 'sun/')

@@ -38,6 +38,18 @@ class Calibration:
         plt.plot(integral)
         plt.show()
 
+    def integrate_halogen(self):
+        hal = self.u.get_halogen()
+        integral = integrate(hal, self.spec_map())
+        plt.plot(integral)
+        plt.show()
+
+    def integrate_laser(self):
+        laser = self.u.get_laser()
+        integral = integrate(laser, self.spec_map())
+        plt.plot(integral)
+        plt.show()        
+
     def spec_map(self):
         flat = boolean_array(self.u.get_halogen(), 1)
         y, x = flat.shape
