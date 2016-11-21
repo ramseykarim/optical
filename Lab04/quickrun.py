@@ -1,4 +1,4 @@
 import calibration as cal
 
 c = cal.Calibration()
-c.integrate_halogen()
+c.integrate_neon()
