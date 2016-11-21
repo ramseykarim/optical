@@ -50,8 +50,14 @@ class Calibration:
         return response
 
     def integrate_neon(self):
-        neon = self.u.get_neon() / self.create_response()
-        integral = integrate(neon, self.spec_map())
+        neon = self.u.get_neon()
+        flat_map = self.spec_map()
+        integral = integrate(neon, flat_map)
+        plt.figure()
+        plt.plot(integral)
+        neon /= self.create_response()
+        plt.figure()
+        integral = integrate(neon, flat_map)
         plt.plot(integral)
         plt.show()
 
