@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pyfits as pf
 import re  # REGEX
-
+import matplotlib.pyplot as plt
 
 DIM_1 = 1024
 DIM_2 = 1048
@@ -112,7 +112,33 @@ class Unpack:
         return dark_sub - np.median(dark_sub)
 
     def get_laser(self):
-        return fits_open(self.prefix + self.laser)
+        laser = fits_open(self.prefix + self.laser)
+        return laser - np.median(laser)
 
     def get_sun(self):
-        return generate_names(self.prefix + 'sun/')
+        names = generate_names(self.prefix + 'sun/')
+        dark_075 = self.get_dark075()
+
+        def sun_helper(sun_name):
+            msg = "Loaded {0} Sun Frame".format(sun_name)
+            print msg
+            # sys.stdout.write("  " + msg + "\r")
+            # sys.stdout.flush()
+            frame = fits_open(sun_name)
+            frame -= dark_075
+            frame -= np.median(frame)
+            return frame
+
+        return [sun_helper(name) for name in names]
+
+    def plot_laser(self):
+        laser = self.get_laser()
+        plt.imshow(laser, vmin=0, vmax=np.mean(laser) + np.std(laser))
+
+    def plot_neon(self):
+        neon = self.get_neon()
+        plt.imshow(neon, vmin=0, vmax=np.mean(neon) + np.std(neon))
+
+    def plot_halogen(self):
+        halogen = self.get_halogen()
+        plt.imshow(halogen, vmin=0, vmax=np.mean(halogen) + np.std(halogen))
