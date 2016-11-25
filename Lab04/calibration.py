@@ -103,7 +103,9 @@ class Calibration:
             centroids = find_centroid(integral)
             plt.plot(x + h_offset, integral,
                      '.', color=color)
-            plt.axvline(centroids + h_offset, color=color)
+            print color
+            print len(centroids)
+            print "-------"
             h_offset += len(integral)
 
     def plot_integrate_halogen(self):
@@ -190,6 +192,8 @@ def find_centroid(spectrum):
     centroids = np.array([])
     for p in peaks:
         begin_peak, end_peak = centroid_cutoff_f(spectrum, p)
+        if not begin_peak:
+            continue
         peak_range = np.arange(end_peak - begin_peak) + begin_peak
         peak_values = spectrum[begin_peak:end_peak]
         assert peak_range.size == peak_values.size
@@ -199,14 +203,17 @@ def find_centroid(spectrum):
 
 
 def neon_peak_cutoff(spectrum, peaks):
-    return [p for p in peaks[0] if spectrum[p] > np.median(spectrum)]
+    return [p for p in peaks[0] if spectrum[p] > np.median(spectrum) + np.std(spectrum)]
 
 
 def neon_centroid_cutoff(spectrum, peak):
     cutoff = np.median(spectrum)
     fwhm = ((spectrum[peak] - cutoff) / 4.) + cutoff
-    begin_peak = np.where(spectrum[peak::-1] < fwhm)
-    begin_peak = peak - begin_peak[0][0]
-    end_peak = np.where(spectrum[peak:] < fwhm)
-    end_peak = end_peak[0][0] + peak
-    return begin_peak, end_peak
+    try:
+        begin_peak = np.where(spectrum[peak::-1] < fwhm)
+        begin_peak = peak - begin_peak[0][0]
+        end_peak = np.where(spectrum[peak:] < fwhm)
+        end_peak = end_peak[0][0] + peak
+        return begin_peak, end_peak
+    except:
+        return False, False

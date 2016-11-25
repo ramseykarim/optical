@@ -120,15 +120,16 @@ class Unpack:
         dark_075 = self.get_dark075()
 
         def sun_helper(sun_name):
-            msg = "Loaded {0} Sun Frame".format(sun_name)
-            sys.stdout.write("  " + msg + "\r")
+            sys.stdout.write(" Loaded " + sun_name.strip() + "\r")
             sys.stdout.flush()
             frame = fits_open(sun_name)
             frame -= dark_075
             frame -= np.median(frame)
             return frame
 
-        return [sun_helper(name) for name in names]
+        return_val = [sun_helper(name) for name in names]
+        print "\n"
+        return return_val
 
     def plot_laser(self):
         laser = self.get_laser()

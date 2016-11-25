@@ -13,12 +13,12 @@ import solar
 # u.plot_halogen()
 #
 
-# c = cal.Calibration()
+c = cal.Calibration()
 
 # c.examine_flat()
 
 # c.plot_integrate_laser()
-# c.plot_integrate_neon()
+c.plot_integrate_neon()
 
 
 # s = solar.Sun()
