@@ -121,9 +121,8 @@ class Unpack:
 
         def sun_helper(sun_name):
             msg = "Loaded {0} Sun Frame".format(sun_name)
-            print msg
-            # sys.stdout.write("  " + msg + "\r")
-            # sys.stdout.flush()
+            sys.stdout.write("  " + msg + "\r")
+            sys.stdout.flush()
             frame = fits_open(sun_name)
             frame -= dark_075
             frame -= np.median(frame)
