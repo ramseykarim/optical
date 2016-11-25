@@ -17,11 +17,11 @@ import solar
 
 # c.examine_flat()
 
-# c.integrate_laser()
-# c.integrate_neon()
+# c.plot_integrate_laser()
+# c.plot_integrate_neon()
 
 
-s = solar.Sun()
-s.light_curve()
+# s = solar.Sun()
+# s.light_curve()
 
 plt.show()
