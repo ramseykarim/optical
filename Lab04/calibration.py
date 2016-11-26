@@ -6,12 +6,6 @@ from line_catalogs import *
 from itertools import cycle
 
 
-def paint_with_colors_of_wind():
-    return cycle(['blue', 'green', 'red',
-                  'orange', 'maroon', 'black',
-                  'purple'])
-
-
 def plot_neon_line_catalog():
     line_dict = {k: v for (k, v) in zip(NEON_LINES, NEON_LINE_HEIGHTS)}
     colors = paint_with_colors_of_wind()
@@ -19,6 +13,12 @@ def plot_neon_line_catalog():
         color = colors.next()
         for line in order:
             plt.plot([line, line], [0, line_dict[line]], color=color)
+
+
+def paint_with_colors_of_wind():
+    return cycle(['blue', 'green', 'red',
+                  'orange', 'maroon', 'black',
+                  'purple'])
 
 
 """
@@ -118,6 +118,26 @@ class Calibration:
         integral = integrate(laser, self.spec_map())
         plt.plot(integral - 50000, '--')
 
+    def test_fit(self):
+        wl_fit = self.fit_neon()
+        for order in wl_fit:
+            plt.plot(order)
+
+    def fit_neon(self):
+        neon = self.u.get_neon()
+        flat_map = self.spec_map()
+        wavelength_set = []
+        for i, order in enumerate(flat_map):
+            suggestions = MATCHED_PIXELS[i]
+            lines = MATCHED_LINES[i]
+            if not suggestions:
+                continue
+            integral = integrate(neon, order)
+            peaks = gather_centroids(integral, suggestions)
+            solution = poly_fit(lines, peaks)
+            wavelength_set.append(solution)
+        return wavelength_set
+
     def spec_map(self):
         flat = boolean_array(self.u.get_halogen(), 1)
         y, x = flat.shape
@@ -170,6 +190,11 @@ Neon Stuff
 """
 
 
+def gather_centroids(array, peak_suggestions):
+    padding = 10
+    return [simple_centroid(array[p - padding:p + padding]) + p - padding for p in peak_suggestions]
+
+
 def find_peaks(spectrum, cutoff_f):
     comparisons = []
     comparison_function = np.frompyfunc(lambda x: x > 0, 1, 1)
@@ -217,3 +242,23 @@ def neon_centroid_cutoff(spectrum, peak):
         return begin_peak, end_peak
     except:
         return False, False
+
+
+def poly_fit(x, y, degree=2):
+    x_list = []
+    while degree >= 0:
+        x_list.append(np.array(x)**degree)
+        degree -= 1
+    x = np.array(x_list)
+    x_t = x.copy()
+    x = x.transpose()
+    y = np.array([y]).transpose()
+    square_matrix = np.linalg.inv(np.dot(x_t, x))
+    a = np.dot(np.dot(square_matrix, x_t), y)
+    return a
+
+
+def apply_fit(pixels, fit):
+    m, b = fit[0], fit[1]
+    wavelength_solution = (pixels - b) / m
+    return wavelength_solution
