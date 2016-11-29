@@ -120,6 +120,9 @@ class Calibration:
         clean_spectrum = one_d_spec[cleaned]
         clean_wl = one_d_wl[cleaned]
         clean_spectrum = clean_spectrum * black_body / flat
+        sorted_indices = np.argsort(clean_wl)
+        clean_wl = clean_wl[sorted_indices]
+        clean_spectrum = clean_spectrum[sorted_indices]
         return clean_wl, clean_spectrum
 
     def flatten_spectrum(self, integrals):
