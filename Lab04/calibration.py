@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import scipy.constants as cst
 from line_catalogs import *
 from itertools import cycle
-import sys
+
+
+HALOGEN_TEMPERATURE = 3000
 
 
 def plot_neon_line_catalog():
@@ -59,6 +61,8 @@ class Calibration:
     def __init__(self):
         self.fit_degree = 2
         self.u = up.Unpack()
+        self.halogen = self.u.get_halogen()
+        self.neon = self.u.get_neon()
         self.flat_map = self.spec_map()
         self.wavelength_by_order = self.wavelength_calibrate()
 
@@ -70,31 +74,12 @@ class Calibration:
                 flat[where] += 1
         plt.imshow(flat)
 
-    def create_full_response(self):
-        """
-        Remember to MULTIPLY this by the spectrum
-        :return:
-        """
-        print "CREATING RESPONSE...",
-        flat = np.zeros([up.DIM_1, up.DIM_2])
-        ones = np.ones([up.DIM_1, up.DIM_2])
-        for order in self.flat_map:
-            for where in order:
-                flat[where] += 1
-        response = self.u.get_halogen() * flat + ones
-        for order in self.flat_map:
-            for where in order:
-                flat[where] -= 1
-        print "RESPONSE COMPLETE."
-        return 1. / response
-
     def plot_integrate_neon(self):
-        neon = self.u.get_neon()
         h_offset = 0
         colors = paint_with_colors_of_wind()
         for order in self.flat_map:
             color = colors.next()
-            integral = simple_integrate(neon, order)
+            integral = simple_integrate(self.neon, order)
             x = np.arange(len(integral))
             centroids = find_centroid(integral)
             plt.plot(x + h_offset, integral,
@@ -105,18 +90,16 @@ class Calibration:
             h_offset += len(integral)
 
     def plot_integrate_halogen(self):
-        hal = self.u.get_halogen()
-        integral = integrate(hal, self.spec_map())
+        integral = integrate(self.halogen, self.flat_map)
         plt.plot(integral, '.')
 
     def plot_integrate_laser(self):
         laser = self.u.get_laser()
-        integral = integrate(laser, self.spec_map())
+        integral = integrate(laser, self.flat_map)
         plt.plot(integral - 50000, '--')
 
     def plot_neon_fit(self):
-        neon = self.u.get_neon()
-        integrals = [simple_integrate(neon, order) for order in self.flat_map]
+        integrals = [simple_integrate(self.neon, order) for order in self.flat_map]
         for wlf, integral in zip(self.wavelength_by_order, integrals):
             if wlf.size:
                 print "W", wlf.size
@@ -124,20 +107,27 @@ class Calibration:
                 plt.plot(wlf, integral, '.')
 
     def test_fit(self):
-        neon = self.u.get_neon()
-        halogen = self.u.get_halogen()
-        nwl, nint = self.interpolated_spectrum([simple_integrate(neon, order) for order in self.flat_map])
-        hwl, hint = self.interpolated_spectrum([simple_integrate(halogen, order) for order in self.flat_map])
-        cleaned = np.where(hint != 0)
-        black_body = planck(hwl[cleaned], 3000)
-        flat = hint[cleaned] / black_body
-        corrected_neon = nint[cleaned] / flat
-        plt.figure()
-        plt.plot(nwl[cleaned], corrected_neon, '.', color='blue')
-        plt.figure()
-        plt.plot(nwl, nint, '.', color='orange')
+        n_integrals = [simple_integrate(self.neon, order) for order in self.flat_map]
+        flat_neon_wl, flat_neon_spec = self.flatten_spectrum(n_integrals)
+        clean_n_wl, clean_n_spec = self.flat_divide(flat_neon_wl, flat_neon_spec)
+        plt.plot(clean_n_wl, clean_n_spec)
 
-    def interpolated_spectrum(self, integrals):
+    def flat_divide(self, one_d_wl, one_d_spec):
+        hwl, hint = self.flatten_spectrum([simple_integrate(self.halogen, order) for order in self.flat_map])
+        cleaned = np.where(hint != 0)
+        black_body = planck(hwl[cleaned], HALOGEN_TEMPERATURE)
+        flat = hint[cleaned]
+        clean_spectrum = one_d_spec[cleaned]
+        clean_wl = one_d_wl[cleaned]
+        clean_spectrum = clean_spectrum * black_body / flat
+        return clean_wl, clean_spectrum
+
+    def flatten_spectrum(self, integrals):
+        """
+        Returns corresponding 0
+        :param integrals:
+        :return:
+        """
         one_d_wl, one_d_spec = np.array([]), np.array([])
         last_order_index = len(self.flat_map) - 1
         for i, (wl, integral) in enumerate(zip(self.wavelength_by_order, integrals)):
@@ -154,7 +144,7 @@ class Calibration:
         This will return empty arrays for orders in which a fit was not possible.
         :return: List of numpy arrays (empty if no fit) corresponding to the
         """
-        neon = self.u.get_neon()
+        neon = self.neon
         wavelength_set = []
         integrals = []
         pixels = np.arange(up.DIM_2)
@@ -173,7 +163,7 @@ class Calibration:
         return wavelength_set
 
     def spec_map(self):
-        flat = boolean_array(self.u.get_halogen(), 1)
+        flat = boolean_array(self.halogen, 1)
         y, x = flat.shape
         step_size = 30
         padding = 20
@@ -268,6 +258,7 @@ def neon_peak_cutoff(spectrum, peaks):
 def neon_centroid_cutoff(spectrum, peak):
     cutoff = np.median(spectrum)
     fwhm = ((spectrum[peak] - cutoff) / 4.) + cutoff
+    # noinspection PyBroadException
     try:
         begin_peak = np.where(spectrum[peak::-1] < fwhm)
         begin_peak = peak - begin_peak[0][0]
