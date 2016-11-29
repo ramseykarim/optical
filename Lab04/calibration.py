@@ -126,7 +126,7 @@ class Calibration:
             if wlf.size:
                 print "W", wlf.size, wlf.shape
                 print "N", integral.size, integral.shape
-                plt.plot(apply_fit_2d(pixels, wlf), integral)
+                plt.plot(apply_fit_2d(pixels, wlf), integral, '.')
 
     def fit_neon(self):
         neon = self.u.get_neon()
