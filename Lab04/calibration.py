@@ -128,14 +128,13 @@ class Calibration:
         halogen = self.u.get_halogen()
         nwl, nint = self.interpolated_spectrum([simple_integrate(neon, order) for order in self.flat_map])
         hwl, hint = self.interpolated_spectrum([simple_integrate(halogen, order) for order in self.flat_map])
-        cleaned = np.where(hint !=  0)
+        cleaned = np.where(hint != 0)
+        black_body = planck(hwl[cleaned], 3000)
+        flat = hint[cleaned] / black_body
+        corrected_neon = nint[cleaned] / flat
         plt.figure()
-        plt.plot(hwl[cleaned], planck(hwl[cleaned], 3000), '.')
-        plt.figure()
-        plt.plot(nwl[cleaned], nint[cleaned], '.')
-        plt.figure()
-        plt.plot(hwl[cleaned], hint[cleaned], '.')
-
+        plt.plot(nwl[cleaned], corrected_neon, '.', color='blue')
+        plt.plot(nwl, nint, '.', color='orange')
 
     def interpolated_spectrum(self, integrals):
         one_d_wl, one_d_spec = np.array([]), np.array([])
@@ -210,11 +209,13 @@ def simple_centroid(array):
 
 
 def planck(wavelength_angstroms, temperature_kelvins):
+    assert isinstance(wavelength_angstroms, np.ndarray)
     wavelength = wavelength_angstroms * 1.e-10
     first = 2. * cst.h * (cst.c ** 2.) / (wavelength ** 5.)
     exponent = cst.c * cst.h / (wavelength * cst.Boltzmann * temperature_kelvins)
     second = 1. / (np.exp(exponent) - 1.)
-    return first * second
+    total = first * second
+    return total / np.mean(total)
 
 
 """
