@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as cst
 from line_catalogs import *
 from itertools import cycle
+import sys
 
 
 def plot_neon_line_catalog():
@@ -119,24 +120,35 @@ class Calibration:
         plt.plot(integral - 50000, '--')
 
     def test_fit(self):
-        wl_fit = self.fit_neon()
-        for order in wl_fit:
-            plt.plot(order)
+        wl_fits, integrals = self.fit_neon()
+        pixels = np.arange(1048)
+        for wlf, integral in zip(wl_fits, integrals):
+            if wlf.size:
+                print "W", wlf.size, wlf.shape
+                print "N", integral.size, integral.shape
+                plt.plot(apply_fit_2d(pixels, wlf), integral)
 
     def fit_neon(self):
         neon = self.u.get_neon()
         flat_map = self.spec_map()
         wavelength_set = []
+        integrals = []
         for i, order in enumerate(flat_map):
+            print "ORDER", i
             suggestions = MATCHED_PIXELS[i]
-            lines = MATCHED_LINES[i]
-            if not suggestions:
+            lines = np.array(MATCHED_LINES[i])
+            if len(suggestions) < 2:
+                print "discarding\n"
+                wavelength_set.append(np.array([]))
+                integrals.append(np.array([]))
                 continue
-            integral = integrate(neon, order)
+            integral = simple_integrate(neon, order)
+            integrals.append(integral)
             peaks = gather_centroids(integral, suggestions)
-            solution = poly_fit(lines, peaks)
+            solution = poly_fit(lines, peaks, degree=2)
             wavelength_set.append(solution)
-        return wavelength_set
+            print "\n"
+        return wavelength_set, integrals
 
     def spec_map(self):
         flat = boolean_array(self.u.get_halogen(), 1)
@@ -173,7 +185,7 @@ Useful Stuff
 
 
 def simple_centroid(array):
-    weighted_sum = array * np.arange(len(array))
+    weighted_sum = np.sum(array * np.arange(len(array)))
     return weighted_sum / np.sum(array)
 
 
@@ -254,11 +266,21 @@ def poly_fit(x, y, degree=2):
     x = x.transpose()
     y = np.array([y]).transpose()
     square_matrix = np.linalg.inv(np.dot(x_t, x))
-    a = np.dot(np.dot(square_matrix, x_t), y)
+    parenthetical = np.dot(square_matrix, x_t)
+    a = np.dot(parenthetical, y)
     return a
 
 
-def apply_fit(pixels, fit):
+def apply_fit_1d(pixels, fit):
     m, b = fit[0], fit[1]
     wavelength_solution = (pixels - b) / m
     return wavelength_solution
+
+def apply_fit_2d(pixels, fit):
+    a, b, c = fit[0], fit[1], fit[2]
+    wavelength_solution = (discriminant(a, b, c, pixels) - b) / (2. * a)
+    return wavelength_solution
+
+def discriminant(a, b, c, x):
+    return np.sqrt((-4. * a * (-1. * x + c)) + b ** 2.)
+
