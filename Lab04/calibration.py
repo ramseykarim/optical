@@ -134,6 +134,7 @@ class Calibration:
         corrected_neon = nint[cleaned] / flat
         plt.figure()
         plt.plot(nwl[cleaned], corrected_neon, '.', color='blue')
+        plt.figure()
         plt.plot(nwl, nint, '.', color='orange')
 
     def interpolated_spectrum(self, integrals):
@@ -215,7 +216,7 @@ def planck(wavelength_angstroms, temperature_kelvins):
     exponent = cst.c * cst.h / (wavelength * cst.Boltzmann * temperature_kelvins)
     second = 1. / (np.exp(exponent) - 1.)
     total = first * second
-    return total / np.mean(total)
+    return total / np.min(total)
 
 
 """
