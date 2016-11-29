@@ -9,127 +9,80 @@ from itertools import cycle
 HALOGEN_TEMPERATURE = 3000
 
 
-def plot_neon_line_catalog():
-    line_dict = {k: v for (k, v) in zip(NEON_LINES, NEON_LINE_HEIGHTS)}
-    colors = paint_with_colors_of_wind()
-    for order in MATCHED_LINES:
-        color = colors.next()
-        for line in order:
-            plt.plot([line, line], [0, line_dict[line]], color=color)
-
-
-def paint_with_colors_of_wind():
-    return cycle(['blue', 'green', 'red',
-                  'orange', 'maroon', 'black',
-                  'purple'])
-
-
-"""
-Array Stuff
-"""
-
-
-def boolean_array(array, std_multiplier):
-    thresh_hold = np.mean(array) + np.std(array) * std_multiplier
-    print thresh_hold
-    ones = np.where(array > thresh_hold)
-    new_array = np.zeros(array.shape)
-    new_array[ones] += 1
-    return new_array
-
-
-def integrate(array, where_list):
-    integral = np.array([])
-    for order in where_list:
-        integral = np.concatenate([integral, simple_integrate(array, order)])
-    return integral
-
-
-def simple_integrate(array, where_list):
-    integral = np.array([])
-    for where in where_list:
-        integral = np.append(integral, np.sum(array[where]))
-    return integral
-
-
 """
 Calibration Class
 """
 
 
 class Calibration:
-    def __init__(self):
-        self.fit_degree = 2
+    """
+    Handles all Calibration.
+    """
+    def __init__(self, degree=2):
+        """
+        Initializer for Calibration Class. Calls several functions and should
+        automatically load four data sets from the archives.
+        :param degree: Polynomial degree for wavelength fit.
+        """
+        self.fit_degree = degree
         self.u = up.Unpack()
         self.halogen = self.u.get_halogen()
         self.neon = self.u.get_neon()
         self.flat_map = self.spec_map()
         self.wavelength_by_order = self.wavelength_calibrate()
+        self.flat_field, self.planck_curve, self.cleaned_indices = self.generate_flat()
 
-    def examine_flat(self):
-        flat = np.zeros([up.DIM_1, up.DIM_2])
-        flat_map = self.spec_map()
-        for order in flat_map:
-            for where in order:
-                flat[where] += 1
-        plt.imshow(flat)
-
-    def plot_integrate_neon(self):
-        h_offset = 0
-        colors = paint_with_colors_of_wind()
-        for order in self.flat_map:
-            color = colors.next()
-            integral = simple_integrate(self.neon, order)
-            x = np.arange(len(integral))
-            centroids = find_centroid(integral)
-            plt.plot(x + h_offset, integral,
-                     '.', color=color)
-            print color
-            print len(centroids)
-            print "-------"
-            h_offset += len(integral)
-
-    def plot_integrate_halogen(self):
-        integral = integrate(self.halogen, self.flat_map)
-        plt.plot(integral, '.')
-
-    def plot_integrate_laser(self):
-        laser = self.u.get_laser()
-        integral = integrate(laser, self.flat_map)
-        plt.plot(integral - 50000, '--')
-
-    def plot_neon_fit(self):
-        integrals = [simple_integrate(self.neon, order) for order in self.flat_map]
-        for wlf, integral in zip(self.wavelength_by_order, integrals):
-            if wlf.size:
-                print "W", wlf.size
-                print "N", integral.size
-                plt.plot(wlf, integral, '.')
-
-    def test_fit(self):
-        n_integrals = [simple_integrate(self.neon, order) for order in self.flat_map]
+    def calibrate(self, field):
+        """
+        MAIN PUBLIC CALIBRATION METHOD!
+        Takes in a 2D spectrum and returns the completely
+        adjusted 1D spectrum and wavelength arrays.
+        :param field: 2D spectral output of up.Unpack class.
+        Expected to be dark and median subtracted already.
+        :return: Wavelength, Spectrum. Both 1D arrays. (needs TWO variables to unpack)
+        """
+        n_integrals = integrate(field, self.flat_map)
         flat_neon_wl, flat_neon_spec = self.flatten_spectrum(n_integrals)
         clean_n_wl, clean_n_spec = self.flat_divide(flat_neon_wl, flat_neon_spec)
-        plt.plot(clean_n_wl, clean_n_spec)
+        final_wl, final_spec = interpolate_spectrum(clean_n_wl, clean_n_spec)
+        return final_wl, final_spec
 
     def flat_divide(self, one_d_wl, one_d_spec):
-        hwl, hint = self.flatten_spectrum([simple_integrate(self.halogen, order) for order in self.flat_map])
-        cleaned = np.where(hint != 0)
-        black_body = planck(hwl[cleaned], HALOGEN_TEMPERATURE)
-        flat = hint[cleaned]
-        clean_spectrum = one_d_spec[cleaned]
-        clean_wl = one_d_wl[cleaned]
-        clean_spectrum = clean_spectrum * black_body / flat
+        """
+        Flat-divides and cleans the 1D outputs of FLATTEN_SPECTRUM
+        :param one_d_wl: Wavelength output of FLATTEN_SPECTRUM
+        :param one_d_spec: Spectrum output of FLATTEN_SPECTRUM
+        :return: Wavelength, Spectrum. Cleaned and flat divided. (needs TWO variables to unpack)
+        """
+        clean_spectrum = one_d_spec[self.cleaned_indices]
+        clean_wl = one_d_wl[self.cleaned_indices]
+        clean_spectrum = clean_spectrum * self.planck_curve / self.flat_field
         sorted_indices = np.argsort(clean_wl)
         clean_wl = clean_wl[sorted_indices]
         clean_spectrum = clean_spectrum[sorted_indices]
         return clean_wl, clean_spectrum
 
+    def generate_flat(self):
+        """
+        Helps initialize three instance variables for the Calibration class.
+        :return: Flat Spectrum, Planck Curve, Clean Indices. (needs THREE variables to unpack)
+        The spectrum in question should be reduced to the Clean Indices and then
+        multiplied by the Planck curve and divided by the flat spectrum.
+        """
+        hwl, hint = self.flatten_spectrum(integrate(self.halogen, self.flat_map))
+        cleaned = np.where(hint != 0)
+        black_body = planck(hwl[cleaned], HALOGEN_TEMPERATURE)
+        flat = hint[cleaned]
+        return flat, black_body, cleaned
+
     def flatten_spectrum(self, integrals):
         """
-        Returns corresponding 0
-        :param integrals:
-        :return:
+        Flattens the list-of-arrays output from integration functions.
+        Ensures that only *consecutive* orders are included. Deals with any
+        orders that can't be fit or are too far away.
+        :param integrals: The list-of-arrays output of INTEGRATE or a loop of
+        SIMPLE_INTEGRATE.
+        :return: Wavelength array, Spectrum value array (needs TWO variables to unpack)
         """
         one_d_wl, one_d_spec = np.array([]), np.array([])
         last_order_index = len(self.flat_map) - 1
@@ -146,6 +99,8 @@ class Calibration:
         This WILL match the output of INTEGRATE or a loop of SIMPLE_INTEGRATE.
         This will return empty arrays for orders in which a fit was not possible.
         :return: List of numpy arrays (empty if no fit) corresponding to the
+        wavelength of every pixel in the 1D spectrum for that order. The top-level
+        list will contain an array for every order.
         """
         neon = self.neon
         wavelength_set = []
@@ -166,6 +121,20 @@ class Calibration:
         return wavelength_set
 
     def spec_map(self):
+        """
+        Assuming halogen will spatially saturate the 2D spectrum with light, this function
+        creates a boolean map of areas on the spectrum that receive above a certain threshold
+        number of ADU. Currently the threshold is set at (np.mean(halogen) + np.std(halogen)).
+        This boolean map is used to create a 'flat map', which separates orders and groups
+        pixels vertically across the width of all orders, effectively finding the location
+        of what will become every single 'pixel' in the 1D spectrum.
+        That flat map is returned as a list of return values of the numpy WHERE function.
+        :return: A list of lists of 1D numpy arrays. These arrays may be wrapped in tuples,
+        so please only use them as indices. Top level list contains several lists, one for
+        each order. Second level lists contain sets of indices; each set is a single 'pixel'
+        in the 1D spectrum and should be summed or averaged across. Everything is organized
+        blue-to-red.
+        """
         flat = boolean_array(self.halogen, 1)
         y, x = flat.shape
         step_size = 30
@@ -191,15 +160,132 @@ class Calibration:
         print "ORDERS FOUND:", count
         return integration_map
 
+    """
+    Plotting & Debugging Calibration Class Methods
+    """
+
+    def examine_flat(self):
+        flat = np.zeros([up.DIM_1, up.DIM_2])
+        flat_map = self.spec_map()
+        for order in flat_map:
+            for where in order:
+                flat[where] += 1
+        plt.imshow(flat)
+
+    def plot_integrate_neon(self):
+        h_offset = 0
+        colors = paint_with_colors_of_wind()
+        for order in self.flat_map:
+            color = colors.next()
+            integral = simple_integrate(self.neon, order)
+            x = np.arange(len(integral))
+            centroids = find_centroid(integral)
+            plt.plot(x + h_offset, integral,
+                     '.', color=color)
+            print color
+            print len(centroids)
+            print "-------"
+            h_offset += len(integral)
+
+    def plot_integrate_halogen(self):
+        integral = flat_integrate(self.halogen, self.flat_map)
+        plt.plot(integral, '.')
+
+    def plot_integrate_laser(self):
+        laser = self.u.get_laser()
+        integral = flat_integrate(laser, self.flat_map)
+        plt.plot(integral - 50000, '--')
+
+    def plot_neon_fit(self):
+        integrals = integrate(self.neon, self.flat_map)
+        for wlf, integral in zip(self.wavelength_by_order, integrals):
+            if wlf.size:
+                print "W", wlf.size
+                print "N", integral.size
+                plt.plot(wlf, integral, '.')
+
 
 """
-Useful Stuff
+END CLASS
+-----------------------------------------------------------------------
+FUNCTIONS:
 """
+
+
+"""
+Preparatory Stuff
+"""
+
+
+def plot_neon_line_catalog():
+    line_dict = {k: v for (k, v) in zip(NEON_LINES, NEON_LINE_HEIGHTS)}
+    colors = paint_with_colors_of_wind()
+    for order in MATCHED_LINES:
+        color = colors.next()
+        for line in order:
+            plt.plot([line, line], [0, line_dict[line]], color=color)
+
+
+def paint_with_colors_of_wind():
+    return cycle(['blue', 'green', 'red',
+                  'orange', 'maroon', 'black',
+                  'purple'])
+
+
+"""
+2D Array Stuff
+"""
+
+
+def boolean_array(array, std_multiplier):
+    thresh_hold = np.mean(array) + np.std(array) * std_multiplier
+    print thresh_hold
+    ones = np.where(array > thresh_hold)
+    new_array = np.zeros(array.shape)
+    new_array[ones] += 1
+    return new_array
+
+
+def flat_integrate(array, where_list):
+    integral = np.array([])
+    for order in where_list:
+        integral = np.concatenate([integral, simple_integrate(array, order)])
+    return integral
+
+
+def integrate(array, where_list):
+    return [simple_integrate(array, order) for order in where_list]
+
+
+def simple_integrate(array, where_list):
+    integral = np.array([])
+    for where in where_list:
+        integral = np.append(integral, np.sum(array[where]))
+    return integral
+
+
+"""
+1D Array Stuff
+"""
+
+
+def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
+    lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
+    dl = (hi_wl - lo_wl) / wavelength_oversampled.size
+    wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
+    assert np.all(np.diff(wavelength_oversampled) > 0)
+    spectrum_well_sampled = np.interp(wavelength_well_sampled, wavelength_oversampled, spectrum_oversampled)
+    return wavelength_well_sampled, spectrum_well_sampled
 
 
 def simple_centroid(array):
     weighted_sum = np.sum(array * np.arange(len(array)))
     return weighted_sum / np.sum(array)
+
+
+def gather_centroids(array, peak_suggestions):
+    padding = 10
+    return [simple_centroid(array[p - padding:p + padding]) + p - padding for p in peak_suggestions]
 
 
 def planck(wavelength_angstroms, temperature_kelvins):
@@ -213,13 +299,44 @@ def planck(wavelength_angstroms, temperature_kelvins):
 
 
 """
-Neon Stuff
+Fitting Stuff
 """
 
 
-def gather_centroids(array, peak_suggestions):
-    padding = 10
-    return [simple_centroid(array[p - padding:p + padding]) + p - padding for p in peak_suggestions]
+def poly_fit(x, y, degree=2):
+    x_list = []
+    while degree >= 0:
+        x_list.append(np.array(x) ** degree)
+        degree -= 1
+    x = np.array(x_list)
+    x_t = x.copy()
+    x = x.transpose()
+    y = np.array([y]).transpose()
+    square_matrix = np.linalg.inv(np.dot(x_t, x))
+    parenthetical = np.dot(square_matrix, x_t)
+    a = np.dot(parenthetical, y)
+    return a
+
+
+def apply_fit_1d(pixels, fit):
+    m, b = fit[0], fit[1]
+    wavelength_solution = (pixels - b) / m
+    return wavelength_solution
+
+
+def apply_fit_2d(pixels, fit):
+    a, b, c = fit[0], fit[1], fit[2]
+    wavelength_solution = (discriminant(a, b, c, pixels) - b) / (2. * a)
+    return wavelength_solution
+
+
+def discriminant(a, b, c, x):
+    return np.sqrt((-4. * a * (-1. * x + c)) + b ** 2.)
+
+
+"""
+Neon-Specific Stuff
+"""
 
 
 def find_peaks(spectrum, cutoff_f):
@@ -270,34 +387,3 @@ def neon_centroid_cutoff(spectrum, peak):
         return begin_peak, end_peak
     except:
         return False, False
-
-
-def poly_fit(x, y, degree=2):
-    x_list = []
-    while degree >= 0:
-        x_list.append(np.array(x) ** degree)
-        degree -= 1
-    x = np.array(x_list)
-    x_t = x.copy()
-    x = x.transpose()
-    y = np.array([y]).transpose()
-    square_matrix = np.linalg.inv(np.dot(x_t, x))
-    parenthetical = np.dot(square_matrix, x_t)
-    a = np.dot(parenthetical, y)
-    return a
-
-
-def apply_fit_1d(pixels, fit):
-    m, b = fit[0], fit[1]
-    wavelength_solution = (pixels - b) / m
-    return wavelength_solution
-
-
-def apply_fit_2d(pixels, fit):
-    a, b, c = fit[0], fit[1], fit[2]
-    wavelength_solution = (discriminant(a, b, c, pixels) - b) / (2. * a)
-    return wavelength_solution
-
-
-def discriminant(a, b, c, x):
-    return np.sqrt((-4. * a * (-1. * x + c)) + b ** 2.)

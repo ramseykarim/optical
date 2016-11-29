@@ -16,7 +16,7 @@ def get_paths():
 
 def generate_names(path):
     bash_cmd = "ls " + path + " | grep \.fit$"
-    process = subprocess.Popen(["bash", "-c", bash_cmd],
+    process = subprocess.Popen(["bash", "-calibrator", bash_cmd],
                                stdout=subprocess.PIPE)
     output, error = process.communicate()
     file_name_list = output.split("\n")
@@ -71,7 +71,7 @@ def process_dark(path):
         return
 
     [quick_fits_collapse(f) for f in file_name_list]
-    print "!\nDone opening/processing directory: " + path
+    print "! Done opening/processing directory: " + path
     return data_pile / float(len(file_name_list))
 
 

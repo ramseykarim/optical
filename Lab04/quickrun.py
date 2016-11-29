@@ -13,19 +13,17 @@ import solar
 # u.plot_halogen()
 #
 
-# c = cal.Calibration()
+# calibrator = cal.Calibration()
 
-# c.examine_flat()
+# calibrator.examine_flat()
 
-# c.plot_integrate_laser()
-# c.plot_integrate_neon()
+# calibrator.plot_integrate_laser()
+# calibrator.plot_integrate_neon()
 
-# s = solar.Sun()
-# s.light_curve()
-
-c = cal.Calibration()
-
-c.test_fit()
-
+s = solar.Sun()
+plt.figure()
+s.light_curve()
+plt.figure()
+s.test_suns()
 
 plt.show()
