@@ -125,11 +125,28 @@ class Calibration:
 
     def test_fit(self):
         neon = self.u.get_neon()
-        self.interpolated_spectrum([simple_integrate(neon, order) for order in self.flat_map])
+        halogen = self.u.get_halogen()
+        nwl, nint = self.interpolated_spectrum([simple_integrate(neon, order) for order in self.flat_map])
+        hwl, hint = self.interpolated_spectrum([simple_integrate(halogen, order) for order in self.flat_map])
+        cleaned = np.where(hint !=  0)
+        plt.figure()
+        plt.plot(hwl[cleaned], planck(hwl[cleaned], 3000), '.')
+        plt.figure()
+        plt.plot(nwl[cleaned], nint[cleaned], '.')
+        plt.figure()
+        plt.plot(hwl[cleaned], hint[cleaned], '.')
+
 
     def interpolated_spectrum(self, integrals):
-        one_dimensional_spectrum = np.array(integrals).flatten()
-        plt.plot(one_dimensional_spectrum)
+        one_d_wl, one_d_spec = np.array([]), np.array([])
+        last_order_index = len(self.flat_map) - 1
+        for i, (wl, integral) in enumerate(zip(self.wavelength_by_order, integrals)):
+            if not wl.size or i == last_order_index:
+                continue
+            else:
+                one_d_spec = np.concatenate([one_d_spec, integral])
+                one_d_wl = np.concatenate([one_d_wl, wl])
+        return one_d_wl, one_d_spec
 
     def wavelength_calibrate(self):
         """
