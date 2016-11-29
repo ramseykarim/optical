@@ -16,7 +16,7 @@ def get_paths():
 
 def generate_names(path):
     bash_cmd = "ls " + path + " | grep \.fit$"
-    process = subprocess.Popen(["bash", "-calibrator", bash_cmd],
+    process = subprocess.Popen(["bash", "-c", bash_cmd],
                                stdout=subprocess.PIPE)
     output, error = process.communicate()
     file_name_list = output.split("\n")
