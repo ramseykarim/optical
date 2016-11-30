@@ -1,3 +1,4 @@
+import numpy as np
 import calibration as cal
 import matplotlib.pyplot as plt
 import unpacking as up
@@ -21,5 +22,11 @@ import solar
 # calibrator.plot_integrate_neon()
 
 s = solar.Sun()
-s.test_suns()
+wc, sc = s.calibrate_sun(s.suns[s.center])
+first = np.where(s.curve > np.mean(s.curve) * 2.)[0][2]
+wf, sf = s.calibrate_sun(s.suns[first])
+#s.test_suns()
+plt.plot(wc, sc)
+plt.plot(wf, sf)
+
 plt.show()

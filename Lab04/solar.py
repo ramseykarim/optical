@@ -24,7 +24,6 @@ class Sun:
 
     def test_suns(self):
         center_wavelengths, center_spectrum = self.calibrate_sun(self.suns[self.center])
-        plt.plot(center_wavelengths, center_spectrum, '.', color='orange')
         in_transit = np.where(self.curve > 2 * np.mean(self.curve))[0]
         shift_array = np.array([])
         strength_array = np.array([])
@@ -44,7 +43,7 @@ class Sun:
         background_indices = np.where(self.curve <= np.median(self.curve))
         specs = []
         for count, i in enumerate(background_indices[0]):
-            sys.stdout.write("Finding background sky... {0} % \r".format((count + 1)/len(background_indices)))
+            sys.stdout.write("Finding background sky... {0} % \r".format(((count + 1)/len(background_indices))))
             sys.stdout.flush()
             wl, spec = self.calibrator.calibrate(self.suns[i])
             specs.append(spec)
@@ -63,4 +62,4 @@ def correlate_offset(a_static, a_roll, max_offset):
         difference = a_static[max_offset:-max_offset] - shifted[max_offset:-max_offset]
         # noinspection PyTypeChecker
         return_value = np.append(return_value, np.sum(difference**2.))
-    return offset_range[np.argmin(return_value)], 1./np.min(return_value)
+    return offset_range[np.argmin(return_value)], 1.-np.min(return_value)
