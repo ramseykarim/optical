@@ -21,9 +21,5 @@ import solar
 # calibrator.plot_integrate_neon()
 
 s = solar.Sun()
-plt.figure()
-s.light_curve()
-plt.figure()
-s.test_suns()
-
+s.generate_light_noise()
 plt.show()
