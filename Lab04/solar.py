@@ -15,29 +15,38 @@ class Sun:
 
     def light_curve(self):
         for frame in self.suns:
-            self.curve = np.append(self.curve, np.sum(frame))
+            self.curve = np.append(self.curve, np.mean(frame))
         self.center = np.argmax(self.curve)
 
     def calibrate_sun(self, sun_frame):
-        wavelengths, spectrum = self.calibrator.calibrate(sun_frame)
-        return wavelengths, spectrum - self.background_light
+        wavelengths, prelim_spectrum = self.calibrator.calibrate(sun_frame)
+        prelim_spec = prelim_spectrum - self.background_light
+        prelim_spec -= np.median(prelim_spec)
+        prelim_spec /= (np.max(prelim_spec) - np.min(prelim_spec))
+        return wavelengths, prelim_spec
 
     def test_suns(self):
         center_wavelengths, center_spectrum = self.calibrate_sun(self.suns[self.center])
-        in_transit = np.where(self.curve > 2 * np.mean(self.curve))[0]
+        in_transit = np.where(self.curve > np.mean(self.curve))[0]
+        self.center = in_transit[in_transit.size/2]
         shift_array = np.array([])
-        strength_array = np.array([])
+        print "Running suns!"
+        count = 0
+        verb = False
         for position in in_transit:
+            sys.stdout.write("Sun # {0} \r ".format(count))
+            sys.stdout.flush()
+            count += 1
             wl, spec = self.calibrate_sun(self.suns[position])
-            offset, strength = correlate_offset(center_spectrum, spec, 20)
+            offset = correlate_offset(center_spectrum, spec, 2, verb=verb)
             shift_array = np.append(shift_array, offset)
-            strength_array = np.append(strength_array, strength)
+        print "\n"
         plt.figure()
-        plt.plot(shift_array)
+        plt.plot(shift_array, '.', color='green')
         plt.title("shift")
         plt.figure()
-        plt.title("strength")
-        plt.plot(strength_array)
+        plt.plot(self.curve[in_transit], '.', color='blue')
+        plt.title("LC")
 
     def generate_light_noise(self):
         background_indices = np.where(self.curve <= np.median(self.curve))
@@ -54,7 +63,7 @@ class Sun:
         return spec
 
 
-def correlate_offset(a_static, a_roll, max_offset):
+def correlate_offset_old(a_static, a_roll, max_offset):
     offset_range = np.arange(max_offset * 2 + 1) - max_offset
     return_value = np.array([])
     for offset in offset_range:
@@ -62,4 +71,27 @@ def correlate_offset(a_static, a_roll, max_offset):
         difference = a_static[max_offset:-max_offset] - shifted[max_offset:-max_offset]
         # noinspection PyTypeChecker
         return_value = np.append(return_value, np.sum(difference**2.))
-    return offset_range[np.argmin(return_value)], 1.-np.min(return_value)
+    return offset_range[np.argmin(return_value)], 1./np.min(return_value)
+
+def correlate_offset(a_static, a_roll, max_offset, verb=False):
+    result = np.correlate(a_static, a_roll, 'same')
+    if verb:
+        print "CENTER of CORRELATE_OFFSET"
+        print result[result.size/2 - 2:result.size/2 + 2]
+    return centroid_at_zero(result, max_offset, verb=verb)
+
+def centroid_at_zero(yarray, search_range, verb=False):
+    zero = yarray.size/2
+    ys = yarray[zero - search_range:zero + search_range + 1]
+    xs = np.arange(search_range * 2 + 1) + 1
+    centroid = np.sum(ys * xs) / np.sum(ys)
+    if verb:
+        print "VERBOSE CENTROID_AT_ZERO"
+        print "Length: ", yarray.size
+        print "zero at ", zero
+        print "Raw centroid: ", centroid
+        print "Search range: ", search_range
+        print "XARR"
+        print xs
+        print "END VERB"
+    return centroid - search_range - 1
