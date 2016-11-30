@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as cst
 from line_catalogs import *
 from itertools import cycle
+from scipy import interpolate
 
 
 HALOGEN_TEMPERATURE = 3000
@@ -269,12 +270,21 @@ def simple_integrate(array, where_list):
 """
 
 
-def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
+def interpolate_spectrum_old(wavelength_oversampled, spectrum_oversampled):
     lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
     dl = (hi_wl - lo_wl) / wavelength_oversampled.size
     wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
     assert np.all(np.diff(wavelength_oversampled) > 0)
     spectrum_well_sampled = np.interp(wavelength_well_sampled, wavelength_oversampled, spectrum_oversampled)
+    return wavelength_well_sampled, spectrum_well_sampled
+
+
+def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
+    lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
+    dl = (hi_wl - lo_wl) / (2. * wavelength_oversampled.size)
+    wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
+    tck = interpolate.splrep(wavelength_oversampled, spectrum_oversampled)
+    spectrum_well_sampled = interpolate.splev(wavelength_well_sampled, tck, der=0)
     return wavelength_well_sampled, spectrum_well_sampled
 
 
