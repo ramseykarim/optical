@@ -27,6 +27,14 @@ class Sun:
 
     def test_suns(self):
         center_wavelengths, center_spectrum = self.calibrate_sun(self.suns[self.center])
+
+        fit = np.polyfit(center_wavelengths, center_spectrum, deg=2)
+        fitted_spec = center_wavelengths**2. * fit[0] + center_wavelengths * fit[1] + center_wavelengths**0. * fit[2]
+        center_spectrum = (center_spectrum - fitted_spec) * np.hanning(center_spectrum.size)
+        halpha = np.where(np.abs(center_spectrum) == np.max(np.abs(center_spectrum)))[0]
+        print "HALPHA", halpha
+        center_spectrum = center_spectrum[halpha-15:halpha+16]
+
         in_transit = np.where(self.curve > np.mean(self.curve))[0]
         self.center = in_transit[in_transit.size/2]
         shift_array = np.array([])
@@ -38,6 +46,10 @@ class Sun:
             sys.stdout.flush()
             count += 1
             wl, spec = self.calibrate_sun(self.suns[position])
+            fit = np.polyfit(wl, spec, deg=2)
+            fitted_spec = wl**2. * fit[0] + wl * fit[1] + wl**0. * fit[2]
+            spec = (spec - fitted_spec) * np.hanning(spec.size)
+            spec = spec[halpha-15:halpha+16]
             offset = correlate_offset(center_spectrum, spec, 2, verb=verb)
             shift_array = np.append(shift_array, offset)
         print "\n"
@@ -52,7 +64,7 @@ class Sun:
         background_indices = np.where(self.curve <= np.median(self.curve))
         specs = []
         for count, i in enumerate(background_indices[0]):
-            sys.stdout.write("Finding background sky... {0} % \r".format(((count + 1)/len(background_indices))))
+            sys.stdout.write("Finding background sky... {0} % \r".format(((count + 1)/len(background_indices[0]))))
             sys.stdout.flush()
             wl, spec = self.calibrator.calibrate(self.suns[i])
             specs.append(spec)

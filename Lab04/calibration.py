@@ -272,7 +272,7 @@ def simple_integrate(array, where_list):
 
 def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
     lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
-    dl = (hi_wl - lo_wl) / (wavelength_oversampled.size * 2.)
+    dl = (hi_wl - lo_wl) / (wavelength_oversampled.size)
     wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
     assert np.all(np.diff(wavelength_oversampled) > 0)
     spectrum_well_sampled = np.interp(wavelength_well_sampled, wavelength_oversampled, spectrum_oversampled)
