@@ -281,7 +281,7 @@ def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
 
 def interpolate_spectrum_new(wavelength_oversampled, spectrum_oversampled):
     lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
-    dl = (hi_wl - lo_wl) / (2. * wavelength_oversampled.size)
+    dl = (hi_wl - lo_wl) / (2. * wavelength_oversampled.size * 2.)
     wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
     tck = interpolate.splrep(wavelength_oversampled, spectrum_oversampled, s=0)
     spectrum_well_sampled = interpolate.splev(wavelength_well_sampled, tck, der=1)
