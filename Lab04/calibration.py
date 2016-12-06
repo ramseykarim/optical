@@ -319,11 +319,11 @@ def poly_fit(x, y, deg=2):
     return a
 
 
-def polynomial(x, coefficients):
+def polynomial(x, coefficients, deg=2):
+    deg = float(deg)
     y = np.zeros(x.size)
-    degree = len(coefficients)
     for i, c in enumerate(coefficients):
-        y += c * x**(degree - i)
+        y += c * x**(deg - i)
     return y
 
 

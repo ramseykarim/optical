@@ -44,7 +44,7 @@ def fits_open(file_name, header=False):
     if header:
         h = hdu[0].header
         hdu.close()
-        return data, h
+        return data, h['JD']
     else:
         hdu.close()
         return data
@@ -129,15 +129,13 @@ class Unpack:
         def sun_helper(sun_name):
             sys.stdout.write(" Loaded " + sun_name.strip() + "\r")
             sys.stdout.flush()
-            frame, header = fits_open(sun_name, header=True)
-            print header
+            frame, date = fits_open(sun_name, header=True)
             frame -= dark_075
             frame -= np.median(frame)
-            return frame
+            return frame, date
 
         return_val = [sun_helper(name) for name in names]
         print "\n"
-        sys.exit(0)
         return return_val
 
     def plot_laser(self):

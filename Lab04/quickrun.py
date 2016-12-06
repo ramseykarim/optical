@@ -23,7 +23,7 @@ import sys
 # calibrator.plot_integrate_neon()
 
 s = solar.Sun()
-s.test_suns()
+s.get_slope()
 plt.show()
 sys.exit(0)
 wc, sc = s.calibrate_sun(s.suns[s.center])

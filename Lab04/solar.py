@@ -2,12 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calibration as cal
 import sys
+import scipy.constants as cst
 
 
 class Sun:
     def __init__(self):
         self.calibrator = cal.Calibration()
-        self.suns = self.calibrator.u.get_sun()
+        self.suns, self.dates = unzip(self.calibrator.u.get_sun())
         self.center = 0
         self.curve = np.array([])
         self.light_curve()
@@ -25,15 +26,12 @@ class Sun:
         prelim_spec /= (np.max(prelim_spec) - np.min(prelim_spec))
         return wavelengths, prelim_spec
 
-    def test_suns(self):
-        center_wl, center_spectrum = self.calibrate_sun(self.suns[self.center])
-
-        center_spectrum, h_alpha = clean_solar_spectrum(center_wl, center_spectrum)
-        plt.figure()
-        plt.plot(center_spectrum)
+    def get_slope(self, plot=False):
+        center_wl, center_spectrum0 = self.calibrate_sun(self.suns[self.center])
+        center_spectrum, h_alpha = clean_solar_spectrum(center_wl, center_spectrum0)
         h_alpha_offset = fit_h_alpha(center_spectrum)
         print "H_ALPHA_OFFSET", h_alpha_offset
-        in_transit = np.where(self.curve > np.mean(self.curve))[0]
+        in_transit = np.where(self.curve > 2*np.mean(self.curve))[0]
         self.center = in_transit[in_transit.size / 2]
         shift_array = []
         print "Running suns!"
@@ -49,12 +47,18 @@ class Sun:
             offset = fit_h_alpha(spec, offset=h_alpha_offset)
             shift_array.append(offset)
         print "\n"
+        shift_array = np.array(shift_array) * -1.
         plt.figure()
-        plt.plot(shift_array, '.', color='green')
-        plt.title("shift")
-        plt.figure()
-        plt.plot(self.curve[in_transit], '.', color='blue')
-        plt.title("LC")
+        dates_minutes = self.dates[in_transit] - self.dates[in_transit][0]
+        dates_minutes *= 24. * 60.
+        velocities = doppler(shift_array)
+        if plot:
+            plt.plot(dates_minutes, velocities*1.e-3, '.', color='green')
+            plt.xlabel("$\Delta t$ (min)")
+            plt.ylabel("Velocity (km/s)")
+            plt.xlim([-0.5, 2.5])
+            plt.title("shift")
+        return dates_minutes, velocities
 
     def generate_light_noise(self):
         background_indices = np.where(self.curve <= np.median(self.curve))
@@ -86,8 +90,8 @@ def fit_h_alpha(array, deg=4, offset=0):
     assert size >= 5
     x0 = np.arange(size) - size / 2
     fit = cal.poly_fit(x0, array, deg=deg)
-    x = np.arange(x0[0], x0[size - 1], size / 1000.)
-    y = cal.polynomial(x, fit)
+    x = np.arange(x0[0], x0[size - 1], size / 10000.)
+    y = cal.polynomial(x, fit, deg=deg)
     return x[np.where(y == np.min(y))] - offset
 
 
@@ -109,12 +113,22 @@ def centroid_at_zero(y_array, search_range, verb=False):
 
 
 def clean_solar_spectrum(wavelengths, solar_spectrum, width=5, h_alpha=None):
-    fitted_spec = cal.polynomial(wavelengths, cal.poly_fit(wavelengths, solar_spectrum, deg=2))
+    fitted_spec = cal.polynomial(wavelengths, cal.poly_fit(wavelengths, solar_spectrum, deg=2), deg=2)
     fixed_spec = (solar_spectrum - fitted_spec) * np.hanning(solar_spectrum.size)
     if h_alpha is None:
-        h_alpha = np.where(np.abs(fixed_spec) == np.max(np.abs(fixed_spec)))[0]
-    fixed_spec = fixed_spec[h_alpha - width:h_alpha + width + 1]
-    if h_alpha is None:
+        h_alpha = np.where(np.abs(solar_spectrum) == np.max(np.abs(solar_spectrum)))[0]
+        fixed_spec = fixed_spec[h_alpha - width:h_alpha + width + 1]
         return fixed_spec, h_alpha
     else:
+        fixed_spec = fixed_spec[h_alpha - width:h_alpha + width + 1]
         return fixed_spec
+
+
+def doppler(d_wavelength_angstroms, lambda_0=6562.8):
+    dl_l = d_wavelength_angstroms / lambda_0
+    return cst.c * dl_l
+
+
+def unzip(array):
+    a, b = zip(*array)
+    return list(a), np.array(b)
