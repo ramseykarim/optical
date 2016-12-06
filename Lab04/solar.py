@@ -16,8 +16,17 @@ class Sun:
 
     def calculate_au(self):
         minutes, velocities = self.get_time_velocity()
-        fit = cal.poly_fit(minutes * 60., velocities, deg=1)
+        seconds = minutes * 60.
+        fit, cov = np.polyfit(seconds, velocities, deg=1, cov=True)
         slope = fit[0]
+        slope = np.abs(slope)
+        print "GAMMA =", slope
+        fitted_line = cal.polynomial(seconds, fit, deg=1)
+        plt.figure()
+        plt.plot(seconds, velocities, '.')
+        plt.plot(seconds, fitted_line)
+        residuals = np.sqrt(cov[0,0])
+        print "GAMMA ERROR =", residuals
         p_earth = 24. * 60. * 60.
         p_sun = 24.5 * p_earth
         d = (-18. + (38. + 48.1/60.)/60.) * cst.degree
@@ -25,8 +34,13 @@ class Sun:
         eta = (7. + 15./60.) * cst.degree
         top = slope * p_earth * p_sun
         bottom = 8. * cst.pi**2. * np.cos(d) * np.cos(eta) * np.cos(i)
-        final = top / bottom / 2
-        return final[0][0]
+
+        R_sun = slope * p_sun / (4. * cst.pi * np.cos(eta) * np.cos(i))
+        theta = 2. * cst.pi * np.cos(d) / (p_earth)
+        final = R_sun / np.tan(theta/2.)
+
+#        final = np.arctan(top / (bottom/2.))
+        return final
 
     def light_curve(self):
         for frame in self.suns:
@@ -60,11 +74,11 @@ class Sun:
             offset = fit_h_alpha(spec, offset=h_alpha_offset)
             shift_array.append(offset)
         print "\n"
-        shift_array = np.array(shift_array) * -1.
+        shift_array = np.array(shift_array)
         plt.figure()
         dates_minutes = self.dates[in_transit] - self.dates[in_transit][0]
         dates_minutes *= 24. * 60.
-        velocities = doppler(shift_array)
+        velocities = doppler(shift_array)[:,0]
         if plot:
             plt.plot(dates_minutes, velocities*1.e-3, '.', color='green')
             plt.xlabel("$\Delta t$ (min)")
