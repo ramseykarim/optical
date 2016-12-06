@@ -14,6 +14,19 @@ class Sun:
         self.light_curve()
         self.background_light = self.generate_light_noise()
 
+    def calculate_au(self):
+        minutes, velocities = self.get_time_velocity()
+        fit = cal.poly_fit(minutes * 60., velocities, deg=1)
+        slope = fit[0]
+        p_earth = 24. * 60. * 60.
+        p_sun = 25. * p_earth
+        d = (-17. + (57. + 24.1/60.)/60.) * cst.degree
+        i = 2.83 * cst.degree
+        eta = (7. + 15./60.) * cst.degree
+        top = slope * p_earth * p_sun
+        bottom = 8. * cst.pi**2. * np.cos(d) * np.cos(eta) * np.cos(i)
+        return top / bottom
+
     def light_curve(self):
         for frame in self.suns:
             self.curve = np.append(self.curve, np.mean(frame))
@@ -26,7 +39,7 @@ class Sun:
         prelim_spec /= (np.max(prelim_spec) - np.min(prelim_spec))
         return wavelengths, prelim_spec
 
-    def get_slope(self, plot=False):
+    def get_time_velocity(self, plot=False):
         center_wl, center_spectrum0 = self.calibrate_sun(self.suns[self.center])
         center_spectrum, h_alpha = clean_solar_spectrum(center_wl, center_spectrum0)
         h_alpha_offset = fit_h_alpha(center_spectrum)
@@ -36,14 +49,13 @@ class Sun:
         shift_array = []
         print "Running suns!"
         count = 0
-        verb = False
         for position in in_transit:
             sys.stdout.write("Sun # {0} \r ".format(count))
             sys.stdout.flush()
             count += 1
             wl, spec = self.calibrate_sun(self.suns[position])
             spec = clean_solar_spectrum(wl, spec, h_alpha=h_alpha)
-            # offset = correlate_offset(center_spectrum, spec, 2, verb=verb)
+            # offset = correlate_offset(center_spectrum, spec, 2, verb=False)
             offset = fit_h_alpha(spec, offset=h_alpha_offset)
             shift_array.append(offset)
         print "\n"

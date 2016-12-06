@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import scipy.constants as cst
 from line_catalogs import *
 from itertools import cycle
-from scipy import interpolate
 
 
 HALOGEN_TEMPERATURE = 3000

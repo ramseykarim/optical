@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import unpacking as up
 import solar
 import sys
+import scipy.constants as cst
 
 
 # u = up.Unpack()
@@ -23,8 +24,9 @@ import sys
 # calibrator.plot_integrate_neon()
 
 s = solar.Sun()
-s.get_slope()
-plt.show()
+au_c = s.calculate_au()
+print "MINE", au_c
+print "THEIRS", cst.au
 sys.exit(0)
 wc, sc = s.calibrate_sun(s.suns[s.center])
 first = np.where(s.curve > np.mean(s.curve) * 2.)[0][-1]
