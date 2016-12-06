@@ -19,13 +19,14 @@ class Sun:
         fit = cal.poly_fit(minutes * 60., velocities, deg=1)
         slope = fit[0]
         p_earth = 24. * 60. * 60.
-        p_sun = 25. * p_earth
-        d = (-17. + (57. + 24.1/60.)/60.) * cst.degree
+        p_sun = 24.5 * p_earth
+        d = (-18. + (38. + 48.1/60.)/60.) * cst.degree
         i = 2.83 * cst.degree
         eta = (7. + 15./60.) * cst.degree
         top = slope * p_earth * p_sun
         bottom = 8. * cst.pi**2. * np.cos(d) * np.cos(eta) * np.cos(i)
-        return top / bottom
+        final = top / bottom / 2
+        return final[0][0]
 
     def light_curve(self):
         for frame in self.suns:

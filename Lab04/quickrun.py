@@ -27,6 +27,7 @@ s = solar.Sun()
 au_c = s.calculate_au()
 print "MINE", au_c
 print "THEIRS", cst.au
+print au_c/cst.au
 sys.exit(0)
 wc, sc = s.calibrate_sun(s.suns[s.center])
 first = np.where(s.curve > np.mean(s.curve) * 2.)[0][-1]
