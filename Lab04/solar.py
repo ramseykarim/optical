@@ -26,19 +26,16 @@ class Sun:
         return wavelengths, prelim_spec
 
     def test_suns(self):
-        center_wavelengths, center_spectrum = self.calibrate_sun(self.suns[self.center])
+        center_wl, center_spectrum = self.calibrate_sun(self.suns[self.center])
 
-        fit = np.polyfit(center_wavelengths, center_spectrum, deg=2)
-        fitted_spec = center_wavelengths**2. * fit[0] + center_wavelengths * fit[1] + center_wavelengths**0. * fit[2]
-        center_spectrum = (center_spectrum - fitted_spec) * np.hanning(center_spectrum.size)
-        halpha = np.where(np.abs(center_spectrum) == np.max(np.abs(center_spectrum)))[0]
-        print "HALPHA", halpha
-        width = 2
-        center_spectrum = center_spectrum[halpha-width:halpha+width+1]
-
+        center_spectrum, h_alpha = clean_solar_spectrum(center_wl, center_spectrum)
+        plt.figure()
+        plt.plot(center_spectrum)
+        h_alpha_offset = fit_h_alpha(center_spectrum)
+        print "H_ALPHA_OFFSET", h_alpha_offset
         in_transit = np.where(self.curve > np.mean(self.curve))[0]
-        self.center = in_transit[in_transit.size/2]
-        shift_array = np.array([])
+        self.center = in_transit[in_transit.size / 2]
+        shift_array = []
         print "Running suns!"
         count = 0
         verb = False
@@ -47,12 +44,10 @@ class Sun:
             sys.stdout.flush()
             count += 1
             wl, spec = self.calibrate_sun(self.suns[position])
-            fit = np.polyfit(wl, spec, deg=2)
-            fitted_spec = wl**2. * fit[0] + wl * fit[1] + wl**0. * fit[2]
-            spec = (spec - fitted_spec) * np.hanning(spec.size)
-            spec = spec[halpha-width:halpha+width+1]
-            offset = correlate_offset(center_spectrum, spec, 2, verb=verb)
-            shift_array = np.append(shift_array, offset)
+            spec = clean_solar_spectrum(wl, spec, h_alpha=h_alpha)
+            # offset = correlate_offset(center_spectrum, spec, 2, verb=verb)
+            offset = fit_h_alpha(spec, offset=h_alpha_offset)
+            shift_array.append(offset)
         print "\n"
         plt.figure()
         plt.plot(shift_array, '.', color='green')
@@ -65,7 +60,9 @@ class Sun:
         background_indices = np.where(self.curve <= np.median(self.curve))
         specs = []
         for count, i in enumerate(background_indices[0]):
-            sys.stdout.write("Finding background sky... {0} % \r".format((100.*(count + 1)/len(background_indices[0]))))
+            sys.stdout.write(
+                "Finding background sky... {0} % \r".format(int(100. * (count + 1.) / len(background_indices[0])))
+            )
             sys.stdout.flush()
             wl, spec = self.calibrator.calibrate(self.suns[i])
             specs.append(spec)
@@ -76,35 +73,48 @@ class Sun:
         return spec
 
 
-def correlate_offset_old(a_static, a_roll, max_offset):
-    offset_range = np.arange(max_offset * 2 + 1) - max_offset
-    return_value = np.array([])
-    for offset in offset_range:
-        shifted = np.roll(a_roll, offset)
-        difference = a_static[max_offset:-max_offset] - shifted[max_offset:-max_offset]
-        # noinspection PyTypeChecker
-        return_value = np.append(return_value, np.sum(difference**2.))
-    return offset_range[np.argmin(return_value)], 1./np.min(return_value)
-
 def correlate_offset(a_static, a_roll, max_offset, verb=False):
     result = np.correlate(a_static, a_roll, 'same')
     if verb:
         print "CENTER of CORRELATE_OFFSET"
-        print result[result.size/2 - 2:result.size/2 + 2]
+        print result[result.size / 2 - 2:result.size / 2 + 2]
     return centroid_at_zero(result, max_offset, verb=verb)
 
-def centroid_at_zero(yarray, search_range, verb=False):
-    zero = yarray.size/2
-    ys = yarray[zero - search_range:zero + search_range + 1]
+
+def fit_h_alpha(array, deg=4, offset=0):
+    size = array.size
+    assert size >= 5
+    x0 = np.arange(size) - size / 2
+    fit = cal.poly_fit(x0, array, deg=deg)
+    x = np.arange(x0[0], x0[size - 1], size / 1000.)
+    y = cal.polynomial(x, fit)
+    return x[np.where(y == np.min(y))] - offset
+
+
+def centroid_at_zero(y_array, search_range, verb=False):
+    zero = y_array.size / 2
+    ys = y_array[zero - search_range:zero + search_range + 1]
     xs = np.arange(search_range * 2 + 1) + 1
     centroid = np.sum(ys * xs) / np.sum(ys)
     if verb:
         print "VERBOSE CENTROID_AT_ZERO"
-        print "Length: ", yarray.size
+        print "Length: ", y_array.size
         print "zero at ", zero
         print "Raw centroid: ", centroid
         print "Search range: ", search_range
-        print "XARR"
+        print "X_ARR"
         print xs
         print "END VERB"
     return centroid - search_range - 1
+
+
+def clean_solar_spectrum(wavelengths, solar_spectrum, width=5, h_alpha=None):
+    fitted_spec = cal.polynomial(wavelengths, cal.poly_fit(wavelengths, solar_spectrum, deg=2))
+    fixed_spec = (solar_spectrum - fitted_spec) * np.hanning(solar_spectrum.size)
+    if h_alpha is None:
+        h_alpha = np.where(np.abs(fixed_spec) == np.max(np.abs(fixed_spec)))[0]
+    fixed_spec = fixed_spec[h_alpha - width:h_alpha + width + 1]
+    if h_alpha is None:
+        return fixed_spec, h_alpha
+    else:
+        return fixed_spec

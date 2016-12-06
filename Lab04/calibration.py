@@ -117,7 +117,7 @@ class Calibration:
             integral = simple_integrate(neon, order)
             integrals.append(integral)
             peaks = gather_centroids(integral, suggestions)
-            solution = poly_fit(lines, peaks, degree=self.fit_degree)
+            solution = poly_fit(lines, peaks, deg=self.fit_degree)
             wavelength_set.append(eval("apply_fit_" + str(self.fit_degree) + "d")(pixels, solution))
         return wavelength_set
 
@@ -272,19 +272,10 @@ def simple_integrate(array, where_list):
 
 def interpolate_spectrum(wavelength_oversampled, spectrum_oversampled):
     lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
-    dl = (hi_wl - lo_wl) / (wavelength_oversampled.size)
+    dl = (hi_wl - lo_wl) / wavelength_oversampled.size
     wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
     assert np.all(np.diff(wavelength_oversampled) > 0)
     spectrum_well_sampled = np.interp(wavelength_well_sampled, wavelength_oversampled, spectrum_oversampled)
-    return wavelength_well_sampled, spectrum_well_sampled
-
-
-def interpolate_spectrum_new(wavelength_oversampled, spectrum_oversampled):
-    lo_wl, hi_wl = np.min(wavelength_oversampled), np.max(wavelength_oversampled)
-    dl = (hi_wl - lo_wl) / (2. * wavelength_oversampled.size * 2.)
-    wavelength_well_sampled = np.arange(lo_wl, hi_wl + dl, dl)
-    tck = interpolate.splrep(wavelength_oversampled, spectrum_oversampled, s=0)
-    spectrum_well_sampled = interpolate.splev(wavelength_well_sampled, tck, der=1)
     return wavelength_well_sampled, spectrum_well_sampled
 
 
@@ -313,11 +304,11 @@ Fitting Stuff
 """
 
 
-def poly_fit(x, y, degree=2):
+def poly_fit(x, y, deg=2):
     x_list = []
-    while degree >= 0:
-        x_list.append(np.array(x) ** degree)
-        degree -= 1
+    while deg >= 0:
+        x_list.append(np.array(x) ** deg)
+        deg -= 1
     x = np.array(x_list)
     x_t = x.copy()
     x = x.transpose()
@@ -326,6 +317,14 @@ def poly_fit(x, y, degree=2):
     parenthetical = np.dot(square_matrix, x_t)
     a = np.dot(parenthetical, y)
     return a
+
+
+def polynomial(x, coefficients):
+    y = np.zeros(x.size)
+    degree = len(coefficients)
+    for i, c in enumerate(coefficients):
+        y += c * x**(degree - i)
+    return y
 
 
 def apply_fit_1d(pixels, fit):

@@ -31,17 +31,23 @@ def file_name_prefix_list(old_list, prefix):
     return new_list
 
 
-def fits_open(file_name):
+def fits_open(file_name, header=False):
     """
     Opens a FITS file.
     :param file_name: String file name
+    :param header: Will ALSO return header if True
     :return: Array contained in the first
     HDU object in the HDUList.
     """
     hdu = pf.open(file_name)
     data = hdu[0].data
-    hdu.close()
-    return data
+    if header:
+        h = hdu[0].header
+        hdu.close()
+        return data, h
+    else:
+        hdu.close()
+        return data
 
 
 def process_dark(path):
@@ -55,6 +61,7 @@ def process_dark(path):
     file_name_list = generate_names(path)
     data_pile = np.zeros([DIM_1, DIM_2])
     nonlocal_variables = {'data_pile': data_pile}
+    print path + " ",
 
     def quick_fits_collapse(file_name):
         """
@@ -71,7 +78,7 @@ def process_dark(path):
         return
 
     [quick_fits_collapse(f) for f in file_name_list]
-    print "! Done opening/processing directory: " + path
+    print "!"
     return data_pile / float(len(file_name_list))
 
 
@@ -122,13 +129,15 @@ class Unpack:
         def sun_helper(sun_name):
             sys.stdout.write(" Loaded " + sun_name.strip() + "\r")
             sys.stdout.flush()
-            frame = fits_open(sun_name)
+            frame, header = fits_open(sun_name, header=True)
+            print header
             frame -= dark_075
             frame -= np.median(frame)
             return frame
 
         return_val = [sun_helper(name) for name in names]
         print "\n"
+        sys.exit(0)
         return return_val
 
     def plot_laser(self):
